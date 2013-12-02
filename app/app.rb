@@ -83,6 +83,11 @@ helpers do
         STDERR.flush
     end
 
+
+    def pp2(arg)
+        STDERR.puts PP.pp(arg, "")
+    end
+
     def cache_credentials(username, password)
         url = `git config --get svn-remote.hedgehog.url`.chomp
         puts2("in cache_credentials")
@@ -155,7 +160,8 @@ helpers do
         #puts2("before system")
         #res = system({"SVNPASS" => p},
         # FIXME - fix this
-        cmd = "svn log --xml -v --username pkgbuild --password #{p} --non-interactive " +
+        cmd = "svn log --xml -v --username pkgbuild --password #{p} " +
+          "--non-interactive --no-auth-cache " +
           "-r #{rev_num} --limit 1 https://hedgehog.fhcrc.org/bioconductor/"
         result = `#{cmd}`
         #puts2("after system")
@@ -166,6 +172,8 @@ helpers do
         for path in paths
             changed_paths.push path.children.to_s
         end
+        puts2 "changed_paths:"
+        pp2 changed_paths
         monitored_repos = []
         File.readlines('data/monitored_svn_repos.txt').each do |line|
             monitored_repos.push line.chomp
@@ -257,6 +265,55 @@ MESSAGE_END
     end
 
 
+    def handle_binary_diffs(source, proj)
+        unless ["git", "svn"].include? source
+            throw "invalid source! [must be git or svn]"
+        end
+
+        Dir.chdir("#{ENV['HOME']}/biocsync") do
+            difffile = "#{proj}_diff.txt"
+            File.readlines(difffile).each do |line|
+                line.chomp!
+                if line =~ /^Binary files/ and line =~ /differ$/
+                    line.gsub!(/^Binary files /, "")
+                    line.gsub!(/ differ$/, "")
+                    gitfile, svnfile = line.split(" and ")
+                    if source == "svn"
+                        FileUtils.cp svnfile, gitfile
+                    else
+                        FileUtils.cp gitfile, svnfile
+                    end
+                end
+            end
+        end
+
+    end
+
+    def handle_only_in(source, proj)
+        if source == "svn"
+            dest = "git"
+        elsif source == "git"
+            dest = "svn"
+        else
+            throw "invalid source! [must be git or svn]"
+        end
+
+        Dir.chdir("#{ENV['HOME']}/biocsync") do
+            difffile = "#{proj}_diff.txt"
+            File.readlines(difffile).each do |line|
+                line.chomp!
+                if line =~ /^Only in #{source}/
+                    line.gsub!(/^Only in /, "")
+                    segs = line.split ": "
+                    file = segs.join("/")
+                    file.gsub!("//", "/")
+                    destfile = file.sub(/^#{source}/, dest)
+                    puts2 "line == #{line}, file == #{file}, destfile == #{destfile}"
+                    FileUtils.cp_r file, destfile
+                end
+            end
+        end
+    end
 
     def handle_svn_commit(repo)
         repos, local_wc, owner, password, email, encpass = nil
@@ -268,79 +325,33 @@ MESSAGE_END
             end
         end
         puts2 "owner is #{owner}"
-        Dir.chdir("#{ENV['HOME']}/biocsync/#{local_wc}") do
-            # this might result in: "Already on 'local-hedgehog"; is that OK?
-            result = run("git checkout local-hedgehog")
-            dump = dump = PP.pp(result, "")
-            puts2 "result is #{dump}"
-            project = local_wc
-            direction = "svn2git"
-            port = (request.port == 80) ? "" : ":#{request.port}"
-            url = "#{request.scheme}://#{request.host}#{port}/merge/#{project}/#{direction}"
-
-            if result.first.exitstatus != 0
-                puts2 "problem doing git checkout, probably need to resolve conflict"
-                notify_svn_merge_problem(result.last, project, email, url)
-
-                # FIXME
-                # This is a bad hack! really we want to give the user the choice of
-                # how to deal with the conflict.
-                # for line in result.last
-                #     if line =~ /: needs merge/
-                #         file = line.split(": needs merge").first
-                #         run("git checkout --theirs #{file}")
-                #         run("git add #{file}")
-                #     end
-                # end
-                # run("git checkout local-hedgehog")
-
-                # FIXME let the user know
-                return
-            end
-            #run("git svn rebase")
-            puts2("before system...")
-            # FIXME this currently returns false but we don't check 
-            # or change behavior accordingly
-            res = system2(password, "git svn rebase --username #{owner}", true)
-            puts2("after system...")
-            run("git checkout master")
-            # problem was not detected above (result.first), but here.
-            result = run("git merge local-hedgehog")
-            #if (result.first == 0)
-            if result.first.exitstatus == 0
-                puts2 "result was true!"
-                run("git commit -m 'gitsvn.bioconductor.org auto merge'")
-                run("git push origin master")
-            else
-                puts2 "result was false!"
-                # tell user there was a problem
-                notify_svn_merge_problem(result.last, local_wc, email, url)
-            end
+        Dir.chdir("#{ENV['HOME']}/biocsync/svn/#{local_wc}") do
+            res = system2(password, "svn up --non-interactive --no-auth-cache --username #{owner}")
+            # FIXME get svn commit message here (and author as well)
         end
+        Dir.chdir("#{ENV['HOME']}/biocsync") do
+            res = `diff -ru -x .git -x .svn git/#{local_wc} svn/#{local_wc} > #{local_wc}_diff.txt`
+            File.readlines("#{local_wc}_diff.txt") do |line|
+                if line =~ /^diff /
+                    res = run("patch -p0 < #{local_wc}_diff.txt") # FIXME handle errors
+                    break
+                end
+            end
+            handle_binary_diffs("svn", local_wc)
+            handle_only_in("svn", local_wc)
+        end
+        Dir.chdir("#{ENV['HOME']}/biocsync/git/#{local_wc}") do
+            run("git add *")
+            run("git commit -a -m 'make this an automated message'")
+            run("git push")
+        end
+        FileUtils.rm "#{ENV['HOME']}/biocsync/#{local_wc}_diff.txt"
     end
 
 
     def dupe_repo?(params)
-        gitfilename = "data/monitored_svn_repos.txt"
-        return false unless File.file? gitfilename
-        gitfile = File.open(gitfilename)
-        gitlines = gitfile.readlines
-        gitfile.close
-
-        for line in gitlines
-            return true if line =~ /^#{params[:githuburl]}/
-        end
-
-        svnfilename = "data/monitored_svn_repos.txt"
-        return false unless File.file? svnfilename
-        svnfile = File.open(svnfilename)
-        svnlines = svnfile.readlines
-        svnfile.close
-
-        for line in svnlines
-            return true if line =~ /^#{params[:rootdir]}#{params[:svndir]}/
-        end
-        false
+        # this assumes that git and svn repos share the same basic name
+        test(?d, "~/biocsync/#{params[:svndir]}") 
     end
 
 
@@ -456,11 +467,14 @@ post '/git-push-hook' do
         end
     end
 
-
-    handle_git_push(gitpush)
+    puts2 "not taking any action for now"
+#    handle_git_push(gitpush) # FIXME put in queue
     "received"
 end
 
+
+# simulate a call to the svn commit hook with e.g.
+# /svn-commit-hook?repos=/extra/svndata/gentleman/svnroot/bioconductor&rev=83823
 get '/svn-commit-hook' do
     sleep 1 # give app a chance to cache the commit id
     # make sure request comes from a hutch ip
@@ -478,10 +492,13 @@ get '/svn-commit-hook' do
     log.puts("rev=#{rev}, repos=#{repos}")
     log.close
     affected_repos = get_monitored_svn_repos_affected_by_commit(rev)
+    puts2 "affected repos:"
+    pp2 affected_repos
+
     for repo in affected_repos
         svn_repo, local_wc = repo.split("\t")
         puts2 "got a commit to the repo #{svn_repo}, local wc #{local_wc}"
-        handle_svn_commit(svn_repo)
+        handle_svn_commit(svn_repo) # FIXME put in queue
     end
     "received!" 
 end
@@ -507,6 +524,8 @@ post '/newproject' do
         svndir = params[:svndir]
         rootdir = params[:rootdir]
 
+        full_svn_url = "#{rootdir}#{svndir.gsub("/", "")}"
+
         data = URI.parse("https://api.github.com/repos/#{githubuser}/#{gitprojname}/collaborators").read
         obj = JSON.parse(data)
         ok = false
@@ -521,6 +540,7 @@ post '/newproject' do
             haml :newproject_post, :locals => {:dupe_repo => false, :collab_ok => false}
         else
             # FIXME - what if git and svn project names differ?
+            # A: name git working copy after svndir
             # fixme - make sure both repos are valid
             gitfilename = "data/monitored_git_repos.txt"
             FileUtils.touch gitfilename unless File.file? gitfilename
@@ -535,63 +555,17 @@ post '/newproject' do
 
             git_ssh_url = "git@github.com:#{githubuser}/#{gitprojname}.git"
             Dir.chdir("#{ENV['HOME']}/biocsync") do
-                FileUtils.rm_rf gitprojname # just in case
-                result = run("git clone #{git_ssh_url}")
-                #res = system2(session[:password],
-                #    "svn export --non-interactive --username #{session[:username]} --password $SVNPASS #{SVN_URL}#{SVN_ROOT}/#{svndir}")
-                Dir.chdir(gitprojname) do
-                    #run("git init")
-                    #run("git remote add origin #{git_ssh_url}")
-                    #run("git add *")
-                    #run("git commit -m 'first commit'")
-                    #run("git push -u origin master")
-
-                    #system({"SVNPASS" => session[:password]}, "")
-                    res = system2(session[:password],
-                        "svn log --non-interactive --limit 1 --username #{session[:username]} --password $SVNPASS #{rootdir}#{svndir}")
-
-                    run("git config --add svn-remote.hedgehog.url #{rootdir}#{svndir}")
-                    res = system2(session[:password],
-                        "svn log --non-interactive --limit 1 --username #{session[:username]} --password $SVNPASS #{rootdir}#{svndir}")
-                    run("git config --add svn-remote.hedgehog.fetch :refs/remotes/hedgehog")
-                    t = Tempfile.new("gitsvn")
-                    t.close
-                    res = system2(session[:password],
-                        "svn log --username #{session[:username]} --password $SVNPASS --xml --limit 1 -r 1:HEAD #{rootdir}#{svndir} > #{t.path}")
-                    # FIXME handle it if res != 0
-                    #xml = `svn log --username #{session[:username]} --xml --limit 1 -r 1:HEAD #{SVN_URL}#{SVN_ROOT}/#{svndir}`
-                    xmlfile = File.open(t.path)
-                    doc = Nokogiri::XML(xmlfile)
-                    firstrev = doc.xpath("//logentry").first()['revision']
-                    #run("echo  | git svn fetch --username #{session[:username]} hedgehog -r #{firstrev}:HEAD")
-                    res = system2(session[:password],
-                        "git svn fetch --username #{session[:username]} hedgehog -r #{firstrev}:HEAD",
-                        true)
-                    puts2 "res = #{res}"
-                    # see http://stackoverflow.com/questions/19712735/git-svn-cannot-setup-tracking-information-starting-point-is-not-a-branch
-                    #run("git checkout -b local-hedgehog -t hedgehog")
-                    run("git checkout hedgehog")
-                    run("git checkout -b local-hedgehog")
-                    # adding these two (would not be necessary in older git)
-                    run("git config --add branch.local-hedgehog.remote .")
-                    run("git config --add branch.local-hedgehog.merge refs/remotes/hedgehog")
-                    # need password here?
-                    run("git svn rebase --username #{session[:username]} hedgehog")
-                    run("git checkout master")
-                    run("git merge local-hedgehog") # FIXME this may need a message
-                    run("git commit -m 'gitsvn.bioconductor.org auto-merge'")
-                    commit_id = `git rev-parse HEAD`.chomp
-                    result = run("git push origin master")
-                    if success(result)
-                        commit_ids_file = "#{APP_ROOT}/data/git_commit_ids.txt"
-                        FileUtils.touch(commit_ids_file)
-                        f = File.open(commit_ids_file, "a")
-                        puts2("trying to break circle on #{commit_id}")
-                        f.puts commit_id
-                    end
-
-                    # OK, now svn changes have gone back to git but what about vice versa?
-                    # and what if there are conflicts here?
+                FileUtils.mkdir_p "git"
+                FileUtils.mkdir_p "svn"
+                Dir.chdir("git") do
+                    FileUtils.rm_rf svndir
+                    result = run("git clone #{git_ssh_url}")
+                end
+                Dir.chdir("svn") do
+                    FileUtils.rm_rf svndir
+                    # set svn pw in env...
+                    result = system2(session[:password], 
+                        "svn co --non-interactive --no-auth-cache --username #{session[:username]}  #{full_svn_url}")
                 end
             end
             haml :newproject_post, :locals => {:dupe_repo => false, :collab_ok => true}
