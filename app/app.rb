@@ -1,4 +1,4 @@
-require 'rubygems'    
+require 'rubygems'     
 #require 'debugger'
 require 'pry'
 require 'crypt/gost'
