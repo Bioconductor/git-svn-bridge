@@ -1,0 +1,9 @@
+%p
+  %font{:color => "red"}= msg()
+
+
+
+%p Welcome.
+
+- if logged_in?()
+  %a{:href => url('/newproject')} Create New Github-SVN mapping

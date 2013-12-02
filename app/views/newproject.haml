@@ -1,0 +1,56 @@
+%script{:src => "/js/jquery-1.10.1.min.js", :type => "text/javascript"}
+%script{:src => "/js/gitsvn.js", :type => "text/javascript"}
+%form#newprojectform(action="/newproject" method="POST" onsubmit="return validateForm()")
+  %p Enter an SVN directory path (must exist):
+  %table
+    %tr
+      %td
+        %span#rootdir_error.error
+        %label(for="rootdir")Root Directory:
+        %select{name: "rootdir"}
+          -# Change this to 'production' directories when ready:
+          %option https://hedgehog.fhcrc.org/bioconductor/trunk/madman/RpacksTesting/
+          %option https://hedgehog.fhcrc.org/bioconductor/branches/RELEASE_2_13/madman/RpacksTesting/
+          %option https://hedgehog.fhcrc.org/bioconductor/trunk/madman/workflowsTesting/
+          %option https://hedgehog.fhcrc.org/bioconductor/branches/RELEASE_2_13/madman/workflowsTesting/
+    %tr
+      %td
+        %span#svndir_error.error
+        %label(for="svndir")Directory name:
+        %input#svndir{name: "svndir", size: "30", type: "text"}
+  Enter the URL for an *empty* Github repository that you own.
+  (Example: https://github.com/username/reponame).
+  %span#githuburl_error.error
+  %input#githuburl(type="text" name="githuburl" size="60")
+  %p
+    %br
+    %span#email_error.error
+    %label(for="email")Your email address:
+    %input#email(type="text" name="email" size="60")
+  %p Before submitting this page, make sure your Github repository is configured as follows:
+  %ul
+    %li In a new browser window, open your Github repository page.
+    %li
+      Click on the Settings button:
+      %br/
+      %img{src: "/images/settings.jpg"}/
+    %li Click "Collaborators"
+    %li (Enter your account password if necessary)
+    %li
+      Enter
+      %em bioc-sync
+      in the "Add a friend" box and click "Add". This allows Bioconductor
+      to modify your Github repository. We will only modify the 'master'
+      branch.
+    %li Click "Service Hooks" and then WebHook URLs. 
+    %li
+      Enter
+      %em http://gitsvn.bioconductor.org/git-push-hook
+      in the URL box and click "Update Settings". This allows
+      Bioconductor to know when there has been a push to your Github
+      repository.
+
+  %p
+    %input#submitbutton(type="submit" value="Create New Project" disabled)
+-#  %p#tester
+-#    clickme

@@ -1,0 +1,8 @@
+%form{:action => url('/login'), :method => "post"}
+  %label(for="username")SVN Username:
+  %input#username(type="text" name="username")
+  %label(for="password")SVN Password:
+  %input#password(type="password" name="password")
+  %label(for="specialpass")Special Password:
+  %input#specialpass(type="password" name="specialpass")
+  %input(type="submit" value="Login") or <a href="/">Cancel</a>

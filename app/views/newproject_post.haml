@@ -1,0 +1,13 @@
+%p
+    %font{:color => "red"}= msg()
+
+-if dupe_repo
+    %p
+        Whoops, there is already a bridge for this repository.
+-elsif !collab_ok
+    %p
+        It looks like bioc-sync has not been added as a collaborator to your Github repository.
+-else
+    %p
+        Awesome! It totally works!
+

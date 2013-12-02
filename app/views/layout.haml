@@ -1,0 +1,17 @@
+%html
+  %head
+    %meta{:charset => "UTF-8"}/
+    %title= title()
+    %link{:href => url("/css/style.css"), :rel => "stylesheet", :type => "text/css"}/
+  %body
+    #header
+      %div
+        -# This UL was defined with the navigation class
+        %ul
+          %li.active
+            %a{:href => "/"} Home
+          %li.active= loginlink()
+
+    #contents= yield
+    #footer
+      .clearfix
