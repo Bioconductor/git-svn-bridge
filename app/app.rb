@@ -341,7 +341,7 @@ MESSAGE_END
             handle_only_in("svn", local_wc)
         end
         Dir.chdir("#{ENV['HOME']}/biocsync/git/#{local_wc}") do
-            run("git add *")
+            run("git add *") # FIXME what about files that start with . (other than .git and .svn?)
             run("git commit -a -m 'make this an automated message'")
             run("git push")
         end
@@ -432,18 +432,32 @@ get '/pwd' do
 end
 
 
+post '/echoer' do
+#    require 'cgi'
+    s = "\n\n\n"
+    s += request.env["rack.input"].read
+    s += "\n\n\n"
+    puts2 s
+    s
+end
+
+# simulate a call to this hook with e.g.
+# curl -X POST -d @foo.json http://localhost:9393/git-push-hook
+# make sure foo.json contains valid json like that sent by github
 post '/git-push-hook' do
     # make sure the request comes from one of these IP addresses:
     # 204.232.175.64/27, 192.30.252.0/22. (or is us, testing)
-    unless request.ip =~ /^204\.232\.175|^192\.30\.252|^140\.107/
+    unless request.ip =~ /^204\.232\.175|^192\.30\.252|^140\.107|^127\.0\.0\.1$/
         puts2 "/git-push-hook: got a request from an invalid ip (#{request.ip})"
         return "You don't look like github to me."
     end
+
     puts2 "!!!!"
     puts2 "in /git-push-hook!!!!"
     puts2 "!!!!"
     #push = JSON.parse(params[:payload])
     push = params[:payload]
+
     log = open("data/gitpushes.log", "a")
     log.puts push
     log.close
@@ -454,6 +468,7 @@ post '/git-push-hook' do
     commits = gitpush["commits"]
     ids = commits.map {|i| i["id"]}
 
+    # nothing has been written here yet since changing over to diffpatch:
     commit_ids_file = "#{APP_ROOT}/data/git_commit_ids.txt"
     if File.file?(commit_ids_file)
         File.readlines(commit_ids_file).each do |line|
