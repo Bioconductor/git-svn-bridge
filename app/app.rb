@@ -131,9 +131,15 @@ helpers do
             handle_only_in("git", local_wc)
         end
         Dir.chdir("#{ENV['HOME']}/biocsync/svn/#{local_wc}") do
-            run("svn add *") # FIXME what about .*? (exclude .git/.svn)
-            # fixme:
-            res = system2(password, "svn commit -m 'a better commit message' --username #{owner} --no-auth-cache --non-interactive")
+            # see http://stackoverflow.com/questions/1218237/subversion-add-all-unversioned-files-to-subversion-using-one-linux-command
+            run %Q(svn st |grep ^?| cut -c9-| awk '{print "\x27"$0"\x27"}' | xargs svn add)
+            #run("svn add *") # FIXME what about .*? (exclude .git/.svn)
+            unless (`svn st`.empty?)
+                res = system2(password, # fixme - commit message
+                    "svn commit -m 'a better commit message' --username #{owner} --no-auth-cache --non-interactive")
+            else
+                puts2 "nothing to commit"
+            end
         end
         FileUtils.rm "#{ENV['HOME']}/biocsync/#{local_wc}_diff.txt"
     end
