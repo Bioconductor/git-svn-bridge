@@ -282,6 +282,8 @@ MESSAGE_END
 
     end
 
+    # FIXME - this only goes one way; it needs 
+    # to handle deletions in the 'opposite' repo
     def handle_only_in(source, proj)
         if source == "svn"
             dest = "git"
@@ -516,6 +518,19 @@ get '/newproject' do
     haml :newproject
 end
 
+# FIXME: how to reconcile two repos at the start if one is not empty?
+# If something is not done explicitly, then files could be deleted
+# from one of the repos (which one depends on which one gets a commit/push)
+# first after the bridge is created. 
+# One option would be to insist that the git repo be empty and copy
+# the svn contents to it at bridge creation time; another option would
+# be to ask the user what strategy they want to use to reconcile the
+# two repos.
+# It does seem like even with an empty git repos, we need to populate
+# it (with svn contents) at bridge creation time, otherwise if
+# there is a push to the otherwise empty git repo, trying to 
+# reconcile it with svn will result in most files being deleted from
+# svn (once file deletion is supported.).
 post '/newproject' do
     protected!
     dupe_repo = dupe_repo?(params)
