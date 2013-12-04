@@ -1,7 +1,10 @@
 %p
     %font{:color => "red"}= msg()
 
--if dupe_repo
+-if defined? github_repos_empty and github_repos_empty
+    %p
+        This github repository is not empty.
+-elsif dupe_repo
     %p
         Whoops, there is already a bridge for this repository.
 -elsif !collab_ok

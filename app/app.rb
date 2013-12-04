@@ -22,6 +22,8 @@ end
 #use Rack::Session::Cookie, secret: 'change_me'
 enable :sessions
 
+set :session_secret, IO.readlines("data/session_secret.txt").first
+
 # FIXME handle it if our app is located somewhere else
 # (settings.root does not seem to work as expected)
 HOSTNAME=`hostname`
@@ -33,9 +35,6 @@ end
 
 SVN_URL="https://hedgehog.fhcrc.org/bioconductor"
 
-# For development, set this to /trunk/madman/RpacksTesting;
-# In production, set to /trunk/madman/Rpacks.
-SVN_ROOT="/trunk/madman/RpacksTesting"
 
 f = File.open("etc/key")
 key = f.readlines.first.chomp
@@ -347,7 +346,9 @@ MESSAGE_END
 
     def dupe_repo?(params)
         # this assumes that git and svn repos share the same basic name
-        test(?d, "~/biocsync/#{params[:svndir]}") 
+        puts2 "params:"
+        pp2 params
+        test(?d, "#{ENV['HOME']}/biocsync/svn/#{params[:svndir]}") 
     end
 
 
@@ -536,7 +537,7 @@ post '/newproject' do
     dupe_repo = dupe_repo?(params)
     if dupe_repo
         puts2 "dupe_repo is TRUE!!!!"
-        haml :newproject_post, :locals => {:dupe_repo => true, :collab_ok => true}
+        return(haml :newproject_post, :locals => {:dupe_repo => true, :collab_ok => true})
     else
         puts2 "dupe_repo is FALSE!!!"
         # do stuff
@@ -546,6 +547,14 @@ post '/newproject' do
         githubuser = segs.pop
         svndir = params[:svndir]
         rootdir = params[:rootdir]
+
+        # make sure it' an empty repo
+        json = URI.parse("https://api.github.com/repos/#{githubuser}/#{gitprojname}").read
+        obj = JSON.parse(json)
+        unless (obj['size'] == 0)
+            puts2 "github repos is not empty, size is #{obj[:size]}"
+            return(haml :newproject_post, :locals => {:github_repos_empty => true})
+        end
 
         full_svn_url = "#{rootdir}#{svndir.gsub("/", "")}"
 
@@ -560,7 +569,7 @@ post '/newproject' do
         end
         unless ok
             puts2 "oops, collaboration is not set up properly"
-            haml :newproject_post, :locals => {:dupe_repo => false, :collab_ok => false}
+            return(haml :newproject_post, :locals => {:dupe_repo => false, :collab_ok => false})
         else
             # FIXME - what if git and svn project names differ?
             # A: name git working copy after svndir
@@ -589,6 +598,13 @@ post '/newproject' do
                     # set svn pw in env...
                     result = system2(session[:password], 
                         "svn co --non-interactive --no-auth-cache --username #{session[:username]}  #{full_svn_url}")
+                end
+                # /trunk/madman/RpacksTesting/test6
+                # dante
+                repo = full_svn_url.sub(SVN_URL, "")
+                puts2 "doing initial population of git from svn, repo is #{repo}"
+                Dir.chdir(APP_ROOT) do
+                    handle_svn_commit(repo)
                 end
             end
             haml :newproject_post, :locals => {:dupe_repo => false, :collab_ok => true}
