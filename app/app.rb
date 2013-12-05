@@ -253,7 +253,7 @@ EOF
         end
         result = thr.value.exitstatus
         puts2 "result code: #{result}"
-        stdout_str  stdout.gets(nil)
+        stdout_str = stdout.gets(nil)
         puts2 "stdout output:\n#{stdout_str}"
         puts2 "stderr output:\n#{stderr.gets(nil)}"
         puts2 "---done---"
