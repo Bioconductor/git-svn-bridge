@@ -140,7 +140,7 @@ helpers do
                     next
                 end
                 if ismsg
-                    msg += line.sub(/^    /, "") + "\n"
+                    msg += (line.sub(/^    /, "") + "\n")
                 end
             end
             commit_message=<<"EOF"
@@ -420,8 +420,21 @@ EOF
             end
             puts2("result of commit: #{res}")
 
+            commit_id = `git rev-parse HEAD`.chomp
+
             #run("git commit -a -m 'make this an automated message'")
-            run("git push origin master")
+            # fixme - this command could fail and the web page would still say
+            # everything worked:
+            result = run("git push origin master")
+            # dante
+            if (success(result))
+                commit_ids_file = "#{APP_ROOT}/data/git_commit_ids.txt"
+                FileUtils.touch(commit_ids_file)
+                f = File.open(commit_ids_file, "a")
+                puts2("trying to break circle on #{commit_id}")
+                f.puts commit_id
+            end
+
         end
         FileUtils.rm "#{ENV['HOME']}/biocsync/#{local_wc}_diff.txt"
     end
