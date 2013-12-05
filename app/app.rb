@@ -367,7 +367,7 @@ MESSAGE_END
     end
 
     def handle_svn_commit(repo)
-        repos, local_wc, owner, password, email, encpass = nil
+        repos, local_wc, owner, password, email, encpass, commit_message = nil
         File.readlines("data/monitored_svn_repos.txt").each do |line|
             if line =~ /^#{repo}/
                 puts2 "line == #{line}, repo=#{repo}"
@@ -406,6 +406,7 @@ EOF
             handle_only_in("svn", local_wc)
         end
         Dir.chdir("#{ENV['HOME']}/biocsync/git/#{local_wc}") do
+            # fixme this fails when creating bridge (but does not halt work):
             run("git checkout master") # necessary?
             files_to_add = Dir.glob(".*")
             files_to_add.reject! {|i| [".git", "..", "."].include? i}
