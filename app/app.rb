@@ -421,7 +421,7 @@ EOF
             puts2("result of commit: #{res}")
 
             #run("git commit -a -m 'make this an automated message'")
-            run("git push")
+            run("git push origin master")
         end
         FileUtils.rm "#{ENV['HOME']}/biocsync/#{local_wc}_diff.txt"
     end
