@@ -132,7 +132,6 @@ helpers do
         Dir.chdir("#{ENV['HOME']}/biocsync/svn/#{local_wc}") do
             # see http://stackoverflow.com/questions/1218237/subversion-add-all-unversioned-files-to-subversion-using-one-linux-command
             run %Q(svn st |grep ^?| cut -c9-| awk '{print "\x27"$0"\x27"}' | xargs svn add)
-            #run("svn add *") # FIXME what about .*? (exclude .git/.svn)
             unless (`svn st`.empty?)
                 res = system2(password, # fixme - commit message
                     "svn commit -m 'a better commit message' --username #{owner} --no-auth-cache --non-interactive")
@@ -151,11 +150,11 @@ helpers do
         #{}"#{rev_num} --limit 1 https://hedgehog.fhcrc.org/bioconductor/"
         #puts2("before system")
         #res = system({"SVNPASS" => p},
-        # FIXME - fix this
-        cmd = "svn log --xml -v --username pkgbuild --password #{p} " +
+        cmd = "svn log --xml -v --username pkgbuild --password $SVNPASS " +
           "--non-interactive --no-auth-cache " +
           "-r #{rev_num} --limit 1 https://hedgehog.fhcrc.org/bioconductor/"
-        result = `#{cmd}`
+        #result = `#{cmd}` 
+        result = system2(p, cmd, get_stdout=true)
         #puts2("after system")
         #result = run(cmd)
         xml_doc = Nokogiri::XML(result)
@@ -200,7 +199,7 @@ helpers do
         result.first.exitstatus == 0
     end
 
-    def system2(pw, cmd, echo=false)
+    def system2(pw, cmd, echo=false, get_stdout=false)
         if echo
             cmd = "echo $SVNPASS | #{cmd}"
         end
@@ -213,10 +212,15 @@ helpers do
         end
         result = thr.value.exitstatus
         puts2 "result code: #{result}"
-        puts2 "stdout output:\n#{stdout.gets(nil)}"
+        stdout_str  stdout.gets(nil)
+        puts2 "stdout output:\n#{stdout_str}"
         puts2 "stderr output:\n#{stderr.gets(nil)}"
         puts2 "---done---"
-        result
+        if (get_stdout)
+            stdout_str
+        else
+            result
+        end
     end
 
 
@@ -281,8 +285,6 @@ MESSAGE_END
 
     end
 
-    # FIXME - this only goes one way; it needs 
-    # to handle deletions in the 'opposite' repo
     def handle_only_in(source, proj)
         if source == "svn"
             dest = "git"
@@ -304,6 +306,20 @@ MESSAGE_END
                     destfile = file.sub(/^#{source}/, dest)
                     puts2 "line == #{line}, file == #{file}, destfile == #{destfile}"
                     FileUtils.cp_r file, destfile
+                end
+                if line =~ /^Only in #{dest}/
+                    line.gsub!(/^Only in /, "")
+                    segs = line.split ": "
+                    file = segs.join("/")
+                    file.gsub!("//", "/")
+                    # delete from source
+                    Dir.chdir("#{source}/#{proj}") do
+                        if source == "svn"
+                            run("svn delete #{file}")
+                        else
+                            run("git rm #{file}")
+                        end
+                    end
                 end
             end
         end
@@ -335,7 +351,9 @@ MESSAGE_END
             handle_only_in("svn", local_wc)
         end
         Dir.chdir("#{ENV['HOME']}/biocsync/git/#{local_wc}") do
-            run("git add *") # FIXME what about files that start with . (other than .git and .svn?)
+            files_to_add = Dir.glob(".*")
+            files_to_add.reject! {|i| [".git", "..", "."].include? i}
+            run("git add #{files_to_add.join ' '}") unless files_to_add.empty?
             # fixme:
             run("git commit -a -m 'make this an automated message'")
             run("git push")
@@ -345,7 +363,6 @@ MESSAGE_END
 
 
     def dupe_repo?(params)
-        # this assumes that git and svn repos share the same basic name
         puts2 "params:"
         pp2 params
         test(?d, "#{ENV['HOME']}/biocsync/svn/#{params[:svndir]}") 
@@ -524,14 +541,10 @@ end
 # from one of the repos (which one depends on which one gets a commit/push)
 # first after the bridge is created. 
 # One option would be to insist that the git repo be empty and copy
-# the svn contents to it at bridge creation time; another option would
+# the svn contents to it at bridge creation time; (this is what we
+# are doing for the moment);  another option would
 # be to ask the user what strategy they want to use to reconcile the
 # two repos.
-# It does seem like even with an empty git repos, we need to populate
-# it (with svn contents) at bridge creation time, otherwise if
-# there is a push to the otherwise empty git repo, trying to 
-# reconcile it with svn will result in most files being deleted from
-# svn (once file deletion is supported.).
 post '/newproject' do
     protected!
     dupe_repo = dupe_repo?(params)
@@ -571,8 +584,6 @@ post '/newproject' do
             puts2 "oops, collaboration is not set up properly"
             return(haml :newproject_post, :locals => {:dupe_repo => false, :collab_ok => false})
         else
-            # FIXME - what if git and svn project names differ?
-            # A: name git working copy after svndir
             # fixme - make sure both repos are valid
             gitfilename = "data/monitored_git_repos.txt"
             FileUtils.touch gitfilename unless File.file? gitfilename
@@ -600,7 +611,6 @@ post '/newproject' do
                         "svn co --non-interactive --no-auth-cache --username #{session[:username]}  #{full_svn_url}")
                 end
                 # /trunk/madman/RpacksTesting/test6
-                # dante
                 repo = full_svn_url.sub(SVN_URL, "")
                 puts2 "doing initial population of git from svn, repo is #{repo}"
                 Dir.chdir(APP_ROOT) do
@@ -622,7 +632,8 @@ get '/test/:name' do
     end
 end
 
-# FIXME - um, what about binary diffs?
+# this is deprecated/not called int he diffpatch way of doing things
+# in any case, it does not deal with binary diffs
 # need to test
 get '/merge/:project/:direction' do
     unless logged_in?
@@ -664,7 +675,7 @@ get '/merge/:project/:direction' do
 end
 
 post '/merge/:project/:direction' do
-    # fixme - what are the implications of ensuring the user is logged in here?
+    # f1xme - what are the implications of ensuring the user is logged in here?
     project = params[:project]
     direction = params[:direction]
     obj = JSON.parse(params[:results])
@@ -692,10 +703,14 @@ post '/merge/:project/:direction' do
                 f.puts commit_id
             end
         else
-            #FIXME run cache_credentials here
+            #F1XME run cache_credentials here
             run("git svn dcommit") # ???
         end
     end
     session[:message] = "Changes merged successfully."
     redirect url('/')    
+end
+
+get '/fox' do
+    "root dir: #{settings.root}"
 end
