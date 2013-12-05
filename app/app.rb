@@ -408,7 +408,7 @@ EOF
         Dir.chdir("#{ENV['HOME']}/biocsync/git/#{local_wc}") do
             # fixme this fails when creating bridge (but does not halt work):
             run("git checkout master") # necessary?
-            files_to_add = Dir.glob(".*")
+            files_to_add = Dir.glob(".*") + Dir.glob("*")
             files_to_add.reject! {|i| [".git", "..", "."].include? i}
             run("git add #{files_to_add.join ' '}") unless files_to_add.empty?
             # only commit if there is something to commit?
