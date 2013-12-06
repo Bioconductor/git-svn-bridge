@@ -199,7 +199,7 @@ EOF
                 run("svn add #{addme.join ' '}")
             end
             unless (`svn st`.empty?)
-                res = IO.popen({SVNPASS=>password},
+                res = IO.popen({"SVNPASS"=>password},
                    "svn commit -F - --username #{owner} --no-auth-cache --non-interactive") do |io|
                       io.write commit_message
                       io.close_write
