@@ -195,10 +195,10 @@ EOF
           "--non-interactive --no-auth-cache " +
           "-r #{rev_num} --limit 1 https://hedgehog.fhcrc.org/bioconductor/"
         #result = `#{cmd}` 
-        result = system2(p, cmd, get_stdout=true)
+        result = system2(p, cmd, echo=false, get_stdout=true)
         #puts2("after system")
         #result = run(cmd)
-        xml_doc = Nokogiri::XML(result)
+        xml_doc = Nokogiri::XML(result) #dante
         paths = xml_doc.xpath("//path")
         changed_paths = []
         for path in paths
@@ -426,7 +426,6 @@ EOF
             # fixme - this command could fail and the web page would still say
             # everything worked:
             result = run("git push origin master")
-            # dante
             if (success(result))
                 commit_ids_file = "#{APP_ROOT}/data/git_commit_ids.txt"
                 FileUtils.touch(commit_ids_file)
