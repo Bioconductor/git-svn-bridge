@@ -103,7 +103,7 @@ helpers do
             repos.sub! /\/$/, ""
         end
         return if repos.nil? # we're not monitoring this repo
-
+        commit_message = nil
         Dir.chdir("#{ENV['HOME']}/biocsync/git/#{local_wc}") do
             result = run("git pull")
             if (result.first.exitstatus == 0)
@@ -158,8 +158,6 @@ EOF
             puts2("run diff...")
             FileUtils.rm_rf "#{local_wc}_diff.txt"
             res = `diff -ru -x .git -x .svn svn/#{local_wc} git/#{local_wc} > #{local_wc}_diff.txt`
-            puts2("waiting a few seconds...")
-            sleep(3)
             puts2("does diff file exist? #{File.exist? "#{local_wc}_diff.txt"}")
             puts2("how many lines does it have? #{`wc -l #{local_wc}_diff.txt`}")
             lines = IO.readlines "#{local_wc}_diff.txt"
