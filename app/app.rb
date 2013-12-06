@@ -350,9 +350,11 @@ MESSAGE_END
                     line.gsub!(/ differ$/, "")
                     gitfile, svnfile = line.split(" and ")
                     if source == "svn"
+                        puts2 "i think source == svn"
                         src, dest = svnfile, gitfile
 #                        FileUtils.cp svnfile, gitfile
                     else
+                        puts2 "i think source == git"
                         src, dest = gitfile, svnfile
 #                        FileUtils.cp gitfile, svnfile
                     end
