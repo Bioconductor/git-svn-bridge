@@ -406,6 +406,7 @@ MESSAGE_END
                 password = decrypt(encpass)
             end
         end
+        commit_message = nil
         puts2 "owner is #{owner}"
         Dir.chdir("#{ENV['HOME']}/biocsync/svn/#{local_wc}") do
             res = system2(password, "svn up --non-interactive --no-auth-cache --username #{owner}")
@@ -426,14 +427,26 @@ EOF
 
         end
         Dir.chdir("#{ENV['HOME']}/biocsync") do
+            puts2("running diff")
             res = `diff -ru -x .git -x .svn git/#{local_wc} svn/#{local_wc} > #{local_wc}_diff.txt`
-            File.readlines("#{local_wc}_diff.txt") do |line|
+            lines = IO.readlines "#{local_wc}_diff.txt"
+            for line in lines
                 if line =~ /^\+\+\+ |^---/
+                    puts2 "running patch"
                     res = run("patch -p0 < #{local_wc}_diff.txt") # FIXME handle errors
                     break
-                end
             end
+            # this doesn't work but IO.readlines does:
+            # File.readlines("#{local_wc}_diff.txt") do |line|
+            #     if line =~ /^\+\+\+ |^---/
+            #         puts2 "running patch"
+            #         res = run("patch -p0 < #{local_wc}_diff.txt") # FIXME handle errors
+            #         break
+            #     end
+            # end
+            puts "handle binary diffs"
             handle_binary_diffs("svn", local_wc)
+            puts "handle file addition/removal"
             handle_only_in("svn", local_wc)
         end
         Dir.chdir("#{ENV['HOME']}/biocsync/git/#{local_wc}") do
