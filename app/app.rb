@@ -200,7 +200,8 @@ EOF
             end
             unless (`svn st`.empty?)
                 res = IO.popen({"SVNPASS"=>password},
-                   "svn commit -F - --username #{owner} --no-auth-cache --non-interactive") do |io|
+                   "svn commit -F - --username #{owner} --no-auth-cache --non-interactive",
+                   mode="r+") do |io|
                       io.write commit_message
                       io.close_write
                       io.read
