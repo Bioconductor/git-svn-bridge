@@ -194,7 +194,8 @@ EOF
                 puts2 "nothing to commit"
             end
         end
-        FileUtils.rm "#{ENV['HOME']}/biocsync/#{local_wc}_diff.txt"
+        # fixme uncomment this:
+        #FileUtils.rm "#{ENV['HOME']}/biocsync/#{local_wc}_diff.txt"
     end
 
     def get_monitored_svn_repos_affected_by_commit(rev_num)
