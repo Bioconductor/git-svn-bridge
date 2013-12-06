@@ -352,10 +352,12 @@ MESSAGE_END
                     if source == "svn"
                         puts2 "i think source == svn"
                         src, dest = svnfile, gitfile
+                        puts2 "src is #{src}, dest is #{dest}"
 #                        FileUtils.cp svnfile, gitfile
                     else
                         puts2 "i think source == git"
                         src, dest = gitfile, svnfile
+                        puts2 "src is #{src}, dest is #{dest}"
 #                        FileUtils.cp gitfile, svnfile
                     end
                     puts2 "copying #{src} to #{dest}"
