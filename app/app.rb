@@ -343,14 +343,19 @@ MESSAGE_END
             File.readlines(difffile).each do |line|
                 line.chomp!
                 if line =~ /^Binary files/ and line =~ /differ$/
+                    src, dest = nil
                     line.gsub!(/^Binary files /, "")
                     line.gsub!(/ differ$/, "")
                     gitfile, svnfile = line.split(" and ")
                     if source == "svn"
-                        FileUtils.cp svnfile, gitfile
+                        src, dest = svnfile, gitfile
+#                        FileUtils.cp svnfile, gitfile
                     else
-                        FileUtils.cp gitfile, svnfile
+                        src, dest = gitfile, svnfile
+#                        FileUtils.cp gitfile, svnfile
                     end
+                    puts2 "copying #{src} to #{dest}"
+                    FileUtils.cp src, dest
                 end
             end
         end
