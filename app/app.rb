@@ -348,7 +348,12 @@ MESSAGE_END
                     src, dest = nil
                     line.gsub!(/^Binary files /, "")
                     line.gsub!(/ differ$/, "")
-                    gitfile, svnfile = line.split(" and ")
+                    gitfile, svnfile = nil
+                    segs = line.split(" and ")
+                    for seg in segs
+                        gitfile = seg if seg =~ /^git/
+                        svnfile = seg if seg =~ /^svn/
+                    end
                     if source == "svn"
                         puts2 "i think source == svn"
                         src, dest = svnfile, gitfile
