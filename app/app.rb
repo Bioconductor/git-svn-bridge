@@ -157,6 +157,8 @@ EOF
             #push or svn commit. problem? (maybe not with queues)
             puts2("run diff...")
             res = `diff -ru -x .git -x .svn svn/#{local_wc} git/#{local_wc} > #{local_wc}_diff.txt`
+            puts2("waiting a few seconds...")
+            sleep(3)
             File.readlines("#{local_wc}_diff.txt") do |line|
                 puts2("line in diff: #{line}")
                 if line =~ /^\+\+\+ |^---/
