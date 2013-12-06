@@ -170,8 +170,9 @@ EOF
                     res = run("patch -p0 < #{local_wc}_diff.txt") # FIXME handle errors
                     break
                 end
-                
+
             end
+            # this doesn't work but IO.readlines (above) does. why?
             # File.readlines("#{local_wc}_diff.txt") do |line|
             #     puts2("line in diff: #{line}")
             #     if line =~ /^\+\+\+ |^---/
@@ -190,7 +191,7 @@ EOF
             files = result.last.split("\n")
             addme = []
             for file in files
-                addme.push file.sub(/^?[ ]+/, "")
+                addme.push file.sub(/^\?[ ]+/, "")
             end
             # see http://stackoverflow.com/questions/1218237/subversion-add-all-unversioned-files-to-subversion-using-one-linux-command
             #run %Q(svn st |grep ^?| cut -c9-| awk '{print "\x27"$0"\x27"}' | xargs svn add)
