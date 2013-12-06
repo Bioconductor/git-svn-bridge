@@ -158,7 +158,7 @@ EOF
             puts2("run diff...")
             res = `diff -ru -x .git -x .svn svn/#{local_wc} git/#{local_wc} > #{local_wc}_diff.txt`
             File.readlines("#{local_wc}_diff.txt") do |line|
-                if line =~ /^diff /
+                if line =~ /^\+\+\+ |^---/
                     puts2("run patch...")
                     res = run("patch -p0 < #{local_wc}_diff.txt") # FIXME handle errors
                     break
@@ -412,7 +412,7 @@ EOF
         Dir.chdir("#{ENV['HOME']}/biocsync") do
             res = `diff -ru -x .git -x .svn git/#{local_wc} svn/#{local_wc} > #{local_wc}_diff.txt`
             File.readlines("#{local_wc}_diff.txt") do |line|
-                if line =~ /^diff /
+                if line =~ /^\+\+\+ |^---/
                     res = run("patch -p0 < #{local_wc}_diff.txt") # FIXME handle errors
                     break
                 end
