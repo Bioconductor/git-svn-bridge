@@ -158,6 +158,7 @@ EOF
             puts2("run diff...")
             res = `diff -ru -x .git -x .svn svn/#{local_wc} git/#{local_wc} > #{local_wc}_diff.txt`
             File.readlines("#{local_wc}_diff.txt") do |line|
+                puts2("line in diff: #{line}")
                 if line =~ /^\+\+\+ |^---/
                     puts2("run patch...")
                     res = run("patch -p0 < #{local_wc}_diff.txt") # FIXME handle errors
