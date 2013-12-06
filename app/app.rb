@@ -162,14 +162,24 @@ EOF
             sleep(3)
             puts2("does diff file exist? #{File.exist? "#{local_wc}_diff.txt"}")
             puts2("how many lines does it have? #{`wc -l #{local_wc}_diff.txt`}")
-            File.readlines("#{local_wc}_diff.txt") do |line|
+            lines = IO.readlines "#{local_wc}_diff.txt"
+            for line in lines
                 puts2("line in diff: #{line}")
                 if line =~ /^\+\+\+ |^---/
                     puts2("run patch...")
                     res = run("patch -p0 < #{local_wc}_diff.txt") # FIXME handle errors
                     break
                 end
+                
             end
+            # File.readlines("#{local_wc}_diff.txt") do |line|
+            #     puts2("line in diff: #{line}")
+            #     if line =~ /^\+\+\+ |^---/
+            #         puts2("run patch...")
+            #         res = run("patch -p0 < #{local_wc}_diff.txt") # FIXME handle errors
+            #         break
+            #     end
+            # end
             puts2("handle binary diffs...")
             handle_binary_diffs("git", local_wc)
             puts2("reconcile file differences...")
