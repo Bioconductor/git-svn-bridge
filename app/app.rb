@@ -435,6 +435,7 @@ EOF
                     puts2 "running patch"
                     res = run("patch -p0 < #{local_wc}_diff.txt") # FIXME handle errors
                     break
+                end
             end
             # this doesn't work but IO.readlines does:
             # File.readlines("#{local_wc}_diff.txt") do |line|
