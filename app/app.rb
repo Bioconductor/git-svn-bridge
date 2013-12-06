@@ -160,7 +160,7 @@ EOF
             res = `diff -ru -x .git -x .svn svn/#{local_wc} git/#{local_wc} > #{local_wc}_diff.txt`
             puts2("waiting a few seconds...")
             sleep(3)
-            puts2("does diff file exist? #{File.exist "#{local_wc}_diff.txt"}")
+            puts2("does diff file exist? #{File.exist? "#{local_wc}_diff.txt"}")
             puts2("how many lines does it have? #{`wc -l #{local_wc}_diff.txt`}")
             File.readlines("#{local_wc}_diff.txt") do |line|
                 puts2("line in diff: #{line}")
