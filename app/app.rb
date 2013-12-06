@@ -191,7 +191,7 @@ EOF
             files = result.last.split("\n")
             addme = []
             for file in files
-                addme.push file.sub(/^\?[ ]+/, "")
+                addme.push file.sub(/^\?[ ]+/, "") if file =~ /^\?/
             end
             # see http://stackoverflow.com/questions/1218237/subversion-add-all-unversioned-files-to-subversion-using-one-linux-command
             #run %Q(svn st |grep ^?| cut -c9-| awk '{print "\x27"$0"\x27"}' | xargs svn add)
