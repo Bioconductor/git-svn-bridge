@@ -338,6 +338,8 @@ MESSAGE_END
             throw "invalid source! [must be git or svn]"
         end
 
+        puts2 "what is source? #{source}"
+
         Dir.chdir("#{ENV['HOME']}/biocsync") do
             difffile = "#{proj}_diff.txt"
             File.readlines(difffile).each do |line|
