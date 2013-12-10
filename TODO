@@ -1,0 +1,7 @@
+Lock critical sections (git/svn commit/push hook response) so only one process can run them at a given time
+More verbose page after you make a bridge that describes next steps
+Testing - ensure history prob doesn't happen again
+Better commit messages on both sides
+? Include all git commit messages since last push in svn log?
+handle manual merging 
+allow non-empty github repos to be bridged
