@@ -267,14 +267,17 @@ MESSAGE_END
         end
     end
 
-    def get_lock_file_name(wc_dir)
-        Dir.chdir(wc_dir) do
-            info = `git svn info`
-            lines = info.split("\n")
-            url = lines.find {|i| i =~ /^URL: /}.sub(/^URL: /, "").chomp
-            lockfile =  "#{Dir.tmpdir}/#{url.gsub("/", "_").gsub(":", "-")}" 
-            return(lockfile)
+    def get_lock_file_name(wc_dir, url=nil)
+        if url.nil?
+            Dir.chdir(wc_dir) do
+                info = `git svn info`
+                lines = info.split("\n")
+                url = lines.find {|i| i =~ /^URL: /}.sub(/^URL: /, "").chomp
+            end
         end
+        lockfile =  "#{Dir.tmpdir}/#{url.gsub("/", "_").gsub(":", "-")}" 
+        puts2 "get_lock_file_name returning #{lockfile}"
+        lockfile
     end
 
     def handle_svn_commit(repo)
@@ -561,7 +564,7 @@ post '/newproject' do
             git_ssh_url = "git@github.com:#{githubuser}/#{gitprojname}.git"
 
             wdir = "#{ENV['HOME']}/biocsync/#{svndir}"
-            lockfile = get_lock_file_name(wdir)
+            lockfile = get_lock_file_name(wdir, "#{rootdir}#{svndir}")
             File.open(lockfile, File::RDWR|File::CREAT, 0644) {|f|
                 f.flock(File::LOCK_EX)
                 Dir.chdir("#{ENV['HOME']}/biocsync") do

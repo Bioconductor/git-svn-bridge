@@ -9,7 +9,7 @@
 # EMAIL
 
 
-REPO_NAME=test6 # should this be set in environment as well?
+REPO_NAME=gitsvntest0 # should this be set in environment as well?
 
 echo "delete the repo"
 
