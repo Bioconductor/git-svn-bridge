@@ -7,11 +7,13 @@
 # SVN_PASSWORD
 # SPECIALPASS
 # EMAIL
+# REPO_NAME
+
+###REPO_NAME=gitsvntest0 # should this be set in environment as well?
 
 
-REPO_NAME=gitsvntest0 # should this be set in environment as well?
 
-echo "delete the repo"
+echo "delete the github repo"
 
 curl -i -u $GITHUB_USERNAME:$GITHUB_PASSWORD -X DELETE https://api.github.com/repos/$GITHUB_USERNAME/$REPO_NAME
 
@@ -36,13 +38,34 @@ REMOTE="ssh -o StrictHostKeyChecking=no ubuntu@gitsvn.bioconductor.org"
 echo "run remote commands"
 
 #$REMOTE "rm -f ~/app/data/monitored_*"
-#$REMOTE "touch ~/app/data/monitored_git_repos.txt ~/app/data/monitored_svn_repos.txt"
+$REMOTE "touch ~/app/data/monitored_git_repos.txt ~/app/data/monitored_svn_repos.txt"
 $REMOTE "cd ~/app/data && grep -v $REPO_NAME monitored_svn_repos.txt > tmp && rm monitored_svn_repos.txt && mv tmp monitored_svn_repos.txt"
 $REMOTE "cd ~/app/data && grep -v $REPO_NAME monitored_git_repos.txt > tmp && rm monitored_git_repos.txt && mv tmp monitored_git_repos.txt"
 $REMOTE "rm -rf ~/biocsync/$REPO_NAME"
 
-$REMOTE "svn up ~/app"
+#$REMOTE "svn up ~/app"
+$REMOTE "cd ~/bioc-git-svn && git pull"
 $REMOTE "touch ~/app/tmp/restart.txt"
+
+echo "delete the svn repo"
+svn delete https://hedgehog.fhcrc.org/bioconductor/trunk/madman/RpacksTesting/$REPO_NAME -m "delete this test directory"
+echo "recreate svn repo"
+
+svn mkdir -m "create test directory" https://hedgehog.fhcrc.org/bioconductor/trunk/madman/RpacksTesting/$REPO_NAME
+oldwd=`pwd`
+tmpdir=`mktemp -d -t foo`
+
+cd $tmpdir
+svn co --non-interactive --no-auth-cache --username $SVN_USERNAME --password $SVN_PASSWORD \
+https://hedgehog.fhcrc.org/bioconductor/trunk/madman/RpacksTesting/$REPO_NAME
+cd $REPO_NAME
+echo "original contents of file (svn)" > README.md
+svn add README.md
+svn ci -m "first commit (svn)"
+
+cd $oldwd
+rm -rf $tmpdir
+
 
 echo "log in to web app"
 

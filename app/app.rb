@@ -292,7 +292,7 @@ MESSAGE_END
         puts2 "owner is #{owner}"
 
         wdir = "#{ENV['HOME']}/biocsync/#{local_wc}"
-        lockfile = get_lock_file_name(wdir)
+        lockfile = get_lock_file_name(wdir, "#{SVN_ROOT}#{repos}")
         File.open(lockfile, File::RDWR|File::CREAT, 0644) {|f|
             f.flock(File::LOCK_EX)
             Dir.chdir(wdir) do
@@ -492,7 +492,7 @@ end
 get '/svn-commit-hook' do
     sleep 1 # give app a chance to cache the commit id
     # make sure request comes from a hutch ip
-    unless request.ip  =~ /^140\.107|^127\.0\.0\.1/ #  140.107.170.120 appears to be hedgehog
+    unless request.ip  =~ /^140\.107|^127\.0\.0\.1$/ #  140.107.170.120 appears to be hedgehog
         puts2 "/svn-commit-hook: got a request from an invalid ip (#{request.ip})"
         return "You don't look like a hedgehog to me."
     end
