@@ -39,8 +39,8 @@ echo "run remote commands"
 
 #$REMOTE "rm -f ~/app/data/monitored_*"
 $REMOTE "touch ~/app/data/monitored_git_repos.txt ~/app/data/monitored_svn_repos.txt"
-$REMOTE "cd ~/app/data && grep -v $REPO_NAME monitored_svn_repos.txt > tmp && rm monitored_svn_repos.txt && mv tmp monitored_svn_repos.txt"
-$REMOTE "cd ~/app/data && grep -v $REPO_NAME monitored_git_repos.txt > tmp && rm monitored_git_repos.txt && mv tmp monitored_git_repos.txt"
+$REMOTE "cd ~/app/data && grep -v $REPO_NAME monitored_svn_repos.txt > tmp ; rm monitored_svn_repos.txt && mv tmp monitored_svn_repos.txt"
+$REMOTE "cd ~/app/data && grep -v $REPO_NAME monitored_git_repos.txt > tmp ; rm monitored_git_repos.txt && mv tmp monitored_git_repos.txt"
 $REMOTE "rm -rf ~/biocsync/$REPO_NAME"
 
 #$REMOTE "svn up ~/app"
