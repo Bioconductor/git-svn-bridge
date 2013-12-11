@@ -121,6 +121,10 @@ helpers do
                 result = run("git pull")
                 if (result.first.exitstatus == 0)
                     puts2 "no problems with git pull!"
+                    if result.last == /^Already up-to-date/
+                        puts2("Nothing to do, exiting....")
+                        return
+                    end
                 else
                     puts2 "problems with git pull, tell the user"
                     # FIXME tell the user...
@@ -176,8 +180,6 @@ EOF
                 puts2 "i'm still here..."
             end
         }
-
-
     end
 
     def get_monitored_svn_repos_affected_by_commit(rev_num)
