@@ -143,11 +143,14 @@ EOF
     
 EOF
                     end
+                    puts2("git commit message is:\n#{commit_msg}")
+                    puts2("running git commit with IO.popen, result is:")
                     res = IO.popen("git commit -F -", mode="r+") do |io|
                         io.write commit_msg
                         io.close_write
                         io.read
                     end
+                    puts2(res)
                     #run("git commit -m 'gitsvn.bioconductor.org resolving changes'")
                     commit_id = `git rev-parse HEAD`.chomp
                 else
