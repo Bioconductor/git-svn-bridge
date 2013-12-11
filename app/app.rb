@@ -234,7 +234,7 @@ EOF
         result.first.exitstatus == 0
     end
 
-    def system2(pw, cmd, echo=false)
+    def system2(pw, cmd, echo=false, get_stdout=false)
         if echo
             cmd = "echo $SVNPASS | #{cmd}"
         end
@@ -247,10 +247,15 @@ EOF
         end
         result = thr.value.exitstatus
         puts2 "result code: #{result}"
-        puts2 "stdout output:\n#{stdout.gets(nil)}"
+        stdout_str = stdout.gets(nil)
+        puts2 "stdout output:\n#{stdout_str}"
         puts2 "stderr output:\n#{stderr.gets(nil)}"
         puts2 "---done---"
-        result
+        if (get_stdout)
+            stdout_str
+        else
+            result
+        end
     end
 
 
@@ -313,7 +318,7 @@ MESSAGE_END
             end
         end
         puts2 "owner is #{owner}"
-        res = system2(password, "svn log -v --xml --limit 1 --non-interactive --no-auth-cache --username #{owner} --password $SVNPASS #{SVN_URL}#{repos}", true)
+        res = system2(password, "svn log -v --xml --limit 1 --non-interactive --no-auth-cache --username #{owner} --password $SVNPASS #{SVN_URL}#{repos}", false, true)
         doc = Nokogiri::Slop(res)
         msg = log.logentry.msg.text
         if (msg =~ /^Commit made by the git-svn bridge/)
