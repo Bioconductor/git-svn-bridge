@@ -375,7 +375,7 @@ MESSAGE_END
                 #if (result.first == 0)
                 if result.first.exitstatus == 0
                     puts2 "result was true!"
-                    run("git reset origin/master") #?????
+                    #run("git reset origin/master") #?????
                     # this must be unnecessary:
                     run("git commit -m 'gitsvn.bioconductor.org auto merge'")
                     run("git push origin master")
