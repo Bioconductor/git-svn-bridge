@@ -567,6 +567,7 @@ end
 
 post '/newproject' do
     protected!
+    puts2 "in post handler for newproject"
     dupe_repo = dupe_repo?(params)
     if dupe_repo
         puts2 "dupe_repo is TRUE!!!!"

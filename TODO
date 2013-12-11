@@ -1,4 +1,4 @@
-Lock critical sections (git/svn commit/push hook response) so only one process can run them at a given time
+X Lock critical sections (git/svn commit/push hook response) so only one process can run them at a given time
 More verbose page after you make a bridge that describes next steps
 Testing - ensure history prob doesn't happen again
 Better commit messages on both sides
@@ -7,3 +7,5 @@ handle manual merging
 allow non-empty github repos to be bridged
 make sure all commit messages that svn sees are at least 10 characters (or complain to whoever
 wrote the commit message)
+avoid extra round trips / break the circle
+binary diffs
