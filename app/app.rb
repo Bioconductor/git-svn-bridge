@@ -122,19 +122,16 @@ helpers do
                     return
                 end
                 run("git checkout local-hedgehog")
-                result = run("git merge master")
-                if (result.first == 0)
-                    puts2 "no problems with git merge"
-                    commit_msg=<<"EOF"
+                commit_msg=<<"EOF"
 Commit made by the git-svn bridge at http://gitsvn.bioconductor.org.
 Consists of #{gitpush['commits'].length} commit(s).
 
 Commit information:
 
 EOF
-                    for commit in gitpush['commits']
-                        author = commit['author']
-                        commit_msg+=<<"EOF"
+                for commit in gitpush['commits']
+                    author = commit['author']
+                    commit_msg+=<<"EOF"
     Commit id: #{commit['id']}
     Commit message: 
     #{commit['message'].gsub(/\n/, "\n    ")}
@@ -142,18 +139,12 @@ EOF
     Commit date: #{commit['timestamp']}
     
 EOF
-                    end
-                    puts2("git commit message is:\n#{commit_msg}")
-                    puts2("running git commit with IO.popen, result is:")
-                    res = IO.popen("git commit -F -", mode="r+") do |io|
-                        io.write commit_msg
-                        io.close_write
-                        io.read
-                    end
-                    puts2(res)
-                    # guess what? that commit doesn't take, because we're clean
-                    #run("git commit -m 'gitsvn.bioconductor.org resolving changes'")
-                    commit_id = `git rev-parse HEAD`.chomp
+                end
+                puts2("git commit message is:\n#{commit_msg}")
+                result = run %Q(git merge -m "#{commit_msg} --commit --no-ff master")
+                #result = run("git merge master")
+                if (result.first == 0)
+                    puts2 "no problems with git merge"
                 else
                     puts2 "problems with git merge, tell user"
                     # tell the user
@@ -313,7 +304,7 @@ MESSAGE_END
     end
 
     def handle_svn_commit(repo)
-        repos, local_wc, owner, password, email, encpass = nil
+        repos, local_wc, owner, password, email, encpass, commit_msg = nil
         File.readlines("data/monitored_svn_repos.txt").each do |line|
             if line =~ /^#{repo}/
                 puts2 "line == #{line}, repo=#{repo}"
@@ -325,7 +316,7 @@ MESSAGE_END
         res = system2(password, "svn log -v --xml --limit 1 --non-interactive --no-auth-cache --username #{owner} --password $SVNPASS #{SVN_URL}#{repos}", false, true)
         doc = Nokogiri::Slop(res)
         msg = doc.log.logentry.msg.text
-        if (msg =~ /^Commit made by the git-svn bridge/)
+        if (msg =~ /Commit made by the git-svn bridge/)
             puts2 ("no need for further action")
             return
         end
@@ -371,7 +362,16 @@ MESSAGE_END
                 puts2("after system...")
                 run("git checkout master")
                 # problem was not detected above (result.first), but here.
-                result = run("git merge local-hedgehog")
+                commit_msg=<<"EOF"
+Commit made by the git-svn bridge at http://gitsvn.bioconductor.org.
+SVN Revision: #{doc.log.logentry.attributes['revision'].value}
+SVN Author: #{doc.log.logentry.author.text}
+Commit Date: #{doc.log.logentry.date.text}
+Commit Message:
+#{doc.log.logentry.msg.text.gsub("\n", "    \n")}
+
+EOF
+                result = run %Q(git merge -m "#{commit_msg}" --commit --no-ff local-hedgehog)
                 #if (result.first == 0)
                 if result.first.exitstatus == 0
                     puts2 "result was true!"
@@ -652,8 +652,8 @@ post '/newproject' do
                         # need password here?
                         run("git svn rebase --username #{session[:username]} hedgehog")
                         run("git checkout master")
-                        run("git merge local-hedgehog") # FIXME this may need a message
-                        run("git commit -m 'gitsvn.bioconductor.org auto-merge'") # FIXME better commit message?
+                        merge_msg = "Creating git-svn bridge"
+                        run %Q(git merge -m "#{merge_msg}" --no-ff --commit local-hedgehog)
                         commit_id = `git rev-parse HEAD`.chomp
                         result = run("git push origin master")
                         if success(result)
