@@ -107,6 +107,7 @@ helpers do
         # start locking here
         wdir = "#{ENV['HOME']}/biocsync/#{local_wc}"
         lockfile = get_lock_file_name(wdir)
+        commit_msg = nil
         File.open(lockfile, File::RDWR|File::CREAT, 0644) {|f|
             f.flock(File::LOCK_EX)
             Dir.chdir(wdir) do
@@ -124,9 +125,31 @@ helpers do
                 result = run("git merge master")
                 if (result.first == 0)
                     puts2 "no problems with git merge"
-                    run("git commit -m 'gitsvn.bioconductor.org resolving changes'")
-                    commit_id = `git rev-parse HEAD`.chomp
+                    commit_msg=<<"EOF"
+Commit made by the git-svn bridge at http://gitsvn.bioconductor.org.
+Consists of #{gitpush['commits'].length} commit(s).
 
+Commit information:
+
+EOF
+                    for commit in gitpush['commits']
+                        author = commit['author']
+                        commit_msg+=<<"EOF"
+    Commit id: #{commit['id']}
+    Commit message: 
+    #{commit['message'].gsub(/\n/, "\n    ")}
+    Committed by #{author['name']} <#{author['email'].sub("@", " at ")}>
+    Commit date: #{commit['timestamp']}
+    
+EOF
+                    end
+                    res = IO.popen("git commit -F -", mode="r+") do |io|
+                        io.write commit_msg
+                        io.close_write
+                        io.read
+                    end
+                    #run("git commit -m 'gitsvn.bioconductor.org resolving changes'")
+                    commit_id = `git rev-parse HEAD`.chomp
                 else
                     puts2 "problems with git merge, tell user"
                     # tell the user
@@ -290,7 +313,13 @@ MESSAGE_END
             end
         end
         puts2 "owner is #{owner}"
-
+        res = system2(password, "svn log -v --xml --limit 1 --non-interactive --no-auth-cache --username #{owner} --password $SVNPASS #{SVN_URL}#{repos}", true)
+        doc = Nokogiri::Slop(res)
+        msg = log.logentry.msg.text
+        if (msg =~ /^Commit made by the git-svn bridge/)
+            puts2 ("no need for further action")
+            return
+        end
         wdir = "#{ENV['HOME']}/biocsync/#{local_wc}"
         lockfile = get_lock_file_name(wdir, "#{SVN_URL}#{SVN_ROOT}#{repos}")
         File.open(lockfile, File::RDWR|File::CREAT, 0644) {|f|
