@@ -121,7 +121,7 @@ helpers do
                 result = run("git pull")
                 if (result.first.exitstatus == 0)
                     puts2 "no problems with git pull!"
-                    if result.last == /^Already up-to-date/
+                    if result.last =~ /^Already up-to-date/
                         puts2("Nothing to do, exiting....")
                         return
                     end
