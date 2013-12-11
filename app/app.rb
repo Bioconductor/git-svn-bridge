@@ -61,6 +61,11 @@ helpers do
         session.has_key? :username
     end
 
+
+    def eq(input)
+        input.gsub('"', '\"')
+    end
+
     def loginlink()
         if (logged_in?)
             url = url('/logout')
@@ -141,7 +146,7 @@ EOF
 EOF
                 end
                 puts2("git commit message is:\n#{commit_msg}")
-                result = run %Q(git merge -m "#{commit_msg}" --commit --no-ff master")
+                result = run %Q(git merge -m "#{eq(commit_msg)}" --commit --no-ff master")
                 #result = run("git merge master")
                 if (result.first == 0)
                     puts2 "no problems with git merge"
@@ -371,7 +376,7 @@ Commit Message:
 #{doc.log.logentry.msg.text.gsub("\n", "    \n")}
 
 EOF
-                result = run %Q(git merge -m "#{commit_msg}" --commit --no-ff local-hedgehog)
+                result = run %Q(git merge -m "#{eq(commit_msg)}" --commit --no-ff local-hedgehog)
                 #if (result.first == 0)
                 if result.first.exitstatus == 0
                     puts2 "result was true!"
@@ -653,7 +658,7 @@ post '/newproject' do
                         run("git svn rebase --username #{session[:username]} hedgehog")
                         run("git checkout master")
                         merge_msg = "Creating git-svn bridge"
-                        run %Q(git merge -m "#{merge_msg}" --no-ff --commit local-hedgehog)
+                        run %Q(git merge -m "#{eq(merge_msg)}" --no-ff --commit local-hedgehog)
                         commit_id = `git rev-parse HEAD`.chomp
                         result = run("git push origin master")
                         if success(result)
