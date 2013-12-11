@@ -91,6 +91,10 @@ helpers do
         STDERR.flush
     end
 
+    def pp2(arg)
+        STDERR.puts PP.pp(arg, "")
+    end
+
     def cache_credentials(username, password)
         url = `git config --get svn-remote.hedgehog.url`.chomp
         puts2("in cache_credentials")
@@ -233,10 +237,11 @@ EOF
         return (result==0) if result.is_a? Fixnum
         return false if result.nil?
         return result if (["TrueClass", "FalseClass"].include? result.class.to_s )
+        return result.first==0 if result.is_a? Array and result.first.is_a? Fixnum
         result.first.exitstatus == 0
     end
 
-    def system2(pw, cmd, echo=false, get_stdout=false)
+    def system2(pw, cmd, echo=false)
         if echo
             cmd = "echo $SVNPASS | #{cmd}"
         end
@@ -250,14 +255,11 @@ EOF
         result = thr.value.exitstatus
         puts2 "result code: #{result}"
         stdout_str = stdout.gets(nil)
+        stderr_str = stderr.gets(nil)
         puts2 "stdout output:\n#{stdout_str}"
         puts2 "stderr output:\n#{stderr.gets(nil)}"
-        puts2 "---done---"
-        if (get_stdout)
-            stdout_str
-        else
-            result
-        end
+        puts2 "---system2() done---"
+        [result, stderr_str, stdout_str]
     end
 
 
@@ -320,8 +322,8 @@ MESSAGE_END
             end
         end
         puts2 "owner is #{owner}"
-        res = system2(password, "svn log -v --xml --limit 1 --non-interactive --no-auth-cache --username #{owner} --password $SVNPASS #{SVN_URL}#{repos}", false, true)
-        doc = Nokogiri::Slop(res)
+        res = system2(password, "svn log -v --xml --limit 1 --non-interactive --no-auth-cache --username #{owner} --password $SVNPASS #{SVN_URL}#{repos}", false)
+        doc = Nokogiri::Slop(res.last)
         msg = doc.log.logentry.msg.text
         if (msg =~ /Commit made by the git-svn bridge/)
             puts2 ("no need for further action")
@@ -649,7 +651,8 @@ post '/newproject' do
                         res = system2(session[:password],
                             "git svn fetch --username #{session[:username]} hedgehog -r HEAD",
                             true)
-                        puts2 "res = #{res}"
+                        puts2 "res:"
+                        pp2 res
                         # see http://stackoverflow.com/questions/19712735/git-svn-cannot-setup-tracking-information-starting-point-is-not-a-branch
                         #run("git checkout -b local-hedgehog -t hedgehog")
                         run("git checkout hedgehog")
