@@ -368,6 +368,10 @@ MESSAGE_END
                 # or change behavior accordingly
                 # HEY, that could be important! that could be why repos get hosed?!?
                 res = system2(password, "git svn rebase --username #{owner}", true)
+                if res.last =~ /^Current branch local-hedgehog is up to date\./
+                    puts2 "Nothing to do, exiting...."
+                    return
+                end
                 puts2("after system...")
                 run("git checkout master")
                 # problem was not detected above (result.first), but here.
