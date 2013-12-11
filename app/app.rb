@@ -146,7 +146,7 @@ EOF
 EOF
                 end
                 puts2("git commit message is:\n#{commit_msg}")
-                result = run %Q(git merge -m "#{eq(commit_msg)}" --commit --no-ff master")
+                result = run %Q(git merge -m "#{eq(commit_msg)}" --commit --no-ff master)
                 #result = run("git merge master")
                 if (result.first == 0)
                     puts2 "no problems with git merge"
