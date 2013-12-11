@@ -292,7 +292,7 @@ MESSAGE_END
         puts2 "owner is #{owner}"
 
         wdir = "#{ENV['HOME']}/biocsync/#{local_wc}"
-        lockfile = get_lock_file_name(wdir, "#{SVN_ROOT}#{repos}")
+        lockfile = get_lock_file_name(wdir, "#{SVN_URL}#{SVN_ROOT}#{repos}")
         File.open(lockfile, File::RDWR|File::CREAT, 0644) {|f|
             f.flock(File::LOCK_EX)
             Dir.chdir(wdir) do
