@@ -320,7 +320,7 @@ MESSAGE_END
         puts2 "owner is #{owner}"
         res = system2(password, "svn log -v --xml --limit 1 --non-interactive --no-auth-cache --username #{owner} --password $SVNPASS #{SVN_URL}#{repos}", false, true)
         doc = Nokogiri::Slop(res)
-        msg = log.logentry.msg.text
+        msg = doc.log.logentry.msg.text
         if (msg =~ /^Commit made by the git-svn bridge/)
             puts2 ("no need for further action")
             return
