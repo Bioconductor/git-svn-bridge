@@ -1,1 +1,4 @@
 testing/conf.sh
+app/data
+app/etc
+testing/cookies.txt
