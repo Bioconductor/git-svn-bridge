@@ -13,9 +13,11 @@ svn co --non-interactive --no-auth-cache --username $SVN_USERNAME --password $SV
 https://hedgehog.fhcrc.org/bioconductor/trunk/madman/RpacksTesting/$REPO_NAME
 
 cd $REPO_NAME
-echo "add a non-conflicting line in svn" >> README.md
 
-svn commit -m "add a non-conflicting line in svn"
+date=`date`
+echo "add a non-conflicting line in svn ($date)" >> README.md
+
+svn commit -m "add a non-conflicting line in svn ($date)"
 
 cd $olddir
 #rm -rf $tmpdir

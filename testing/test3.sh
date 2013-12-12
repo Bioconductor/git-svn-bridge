@@ -15,9 +15,11 @@ cd $REPO_NAME
 
 git checkout master
 
-echo "add a non-conflicting line in git" >> README.md
+date=`date`
 
-git commit -a -m "add a non-conflicting line in git"
+echo "add a non-conflicting line in git ($date)" >> README.md
+
+git commit -a -m "add a non-conflicting line in git $(date)"
 git push
 
 cd $olddir
