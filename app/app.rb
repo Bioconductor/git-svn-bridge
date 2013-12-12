@@ -373,7 +373,7 @@ MESSAGE_END
                     puts2 "Nothing to do, exiting...."
                     return
                 end
-                run("git commit -a -m 'meaningless-ish commit here'")
+                ##run("git commit -a -m 'meaningless-ish commit here'")
                 puts2("after system...")
                 run("git checkout master")
                 # problem was not detected above (result.first), but here.
@@ -393,7 +393,7 @@ EOF
                     puts2 "result was true!"
                     #run("git reset origin/master") #?????
                     # this must be unnecessary:
-                    run("git commit -m 'gitsvn.bioconductor.org auto merge'")
+                    ##run("git commit -m 'gitsvn.bioconductor.org auto merge'")
                     run("git push origin master")
                 else
                     puts2 "result was false!"
