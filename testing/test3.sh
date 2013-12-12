@@ -10,8 +10,10 @@ echo "tmpdir is $tmpdir"
 cd $tmpdir
 
 git clone git@github.com:$GITHUB_USERNAME/$REPO_NAME.git
+
 cd $REPO_NAME
 
+git checkout master
 
 echo "add a non-conflicting line in git" >> README.md
 

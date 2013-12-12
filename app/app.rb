@@ -372,6 +372,7 @@ MESSAGE_END
                     puts2 "Nothing to do, exiting...."
                     return
                 end
+                run("git commit -a -m 'meaningless-ish commit here'")
                 puts2("after system...")
                 run("git checkout master")
                 # problem was not detected above (result.first), but here.
