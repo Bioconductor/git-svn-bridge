@@ -168,7 +168,7 @@ EOF
                 puts2 "before system"
                 #run("git svn dcommit --add-author-from --username #{owner}")
                 cache_credentials(owner, password)
-                res = system2(password, "git svn rebase --username #{owner}", true)
+###                res = system2(password, "git svn rebase --username #{owner}", true)
 
                 res = system2(password, "git svn dcommit --add-author-from --username #{owner}",
                     true)
