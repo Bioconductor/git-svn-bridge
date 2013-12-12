@@ -162,14 +162,15 @@ EOF
                 else
                     puts2 "problems with git merge, tell user"
                     # tell the user
+                    # FIXME - this failure isn't reported?
                     return
                 end
+                run("git commit -m 'make this a better message'")                
                 # FIXME customize the message so --add-author-from actually works
                 puts2 "before system"
                 #run("git svn dcommit --add-author-from --username #{owner}")
                 cache_credentials(owner, password)
 ###                res = system2(password, "git svn rebase --username #{owner}", true)
-
                 res = system2(password, "git svn dcommit --add-author-from --username #{owner}",
                     true)
                 puts2 "after system"
@@ -761,6 +762,7 @@ post '/merge/:project/:direction' do
             f.close
             run("git add #{name}")
         end
+        # FIXME better commit message (entered in editor?)
         run("git commit -m 'differences resolved in gitsvn.bioconductor.org editor'")
         commit_id = `git rev-parse HEAD`.chomp
         if (direction == "svn2git")
@@ -774,6 +776,7 @@ post '/merge/:project/:direction' do
             end
         else
             #FIXME run cache_credentials here
+            # FIXME need to git commit before git svn dcommit?
             run("git svn dcommit") # ???
         end
     end
