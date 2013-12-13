@@ -7,11 +7,11 @@ cd ~/gitsvntest
 
 ## EDIT LINES IN THIS SECTION ##
 # GITHUB_USERNAME should be your github username, e.g. dtenenbaum
-#export GITHUB_USERNAME=
-#export GITHUB_PASSWORD=
+export GITHUB_USERNAME=
+export GITHUB_PASSWORD=
 # REPO_NAME should be the name of an svn git/repos you want to create for testing,
 # e.g. foobar
-#export REPO_NAME=
+export REPO_NAME=
 ## SHOULD NOT NEED TO EDIT BELOW HERE ##
 
 
@@ -25,9 +25,8 @@ sleep 2
 
 curl -i -u $GITHUB_USERNAME:$GITHUB_PASSWORD -X POST -H "Content-Type: application/json" -d "{\"name\":\"$REPO_NAME\"}" https://api.github.com/user/repos
 
-
-
-git clone git@github.com:$GITHUB_USERNAME/$REPO_NAME.git
+rm -rf $REPO_NAME
+git clone git@github.com:$GITHUB_USERNAME/$REPO_NAME
 cd $REPO_NAME
 
 
@@ -60,7 +59,7 @@ git config --global alias.gl "log --graph --decorate --pretty=oneline --abbrev-c
 
 
 git config --add svn-remote.hedgehog.url $SVN_URL/$REPO_NAME
-#git config --add svn-remote.hedgehog.fetch :refs/remotes/hedgehog
+git config --add svn-remote.hedgehog.fetch :refs/remotes/hedgehog
 git svn fetch hedgehog -r HEAD
 
 git checkout hedgehog
@@ -68,7 +67,7 @@ git checkout hedgehog
 git checkout -b local-hedgehog
 
 git config --add branch.local-hedgehog.remote .
-git config --add branch.local-hedgehog.merge refs/remotes/hedgehog
+###git config --add branch.local-hedgehog.merge refs/remotes/hedgehog
 git svn rebase hedgehog
 
 git checkout master
@@ -80,28 +79,14 @@ git push origin master
 
 git gl
 
-# now make a change in the svn working copy
-pushd /tmp/$REPO_NAME.svn
-echo "make a change in svn at `date`" >> README.md
-svn ci -m "made a change in svn at `date`"
-popd
 
-git checkout local-hedgehog 
-git svn rebase
-
-git gl
-
-git checkout master
-git merge local-hedgehog 
-
-git gl
-
-git push origin master
+## removing stuff here (make change #1 in svn)
 
 
 # now create a separate git working copy (to simulate an external user)
 # and make a change there:
 
+echo "make change in git"
 
 pushd /tmp
 rm -rf $REPO_NAME.git
@@ -124,7 +109,9 @@ git svn dcommit --add-author-from
 
 git gl
 
-# now go to svn and make another change
+# now go to svn and make a change
+
+echo "make svn change"
 
 pushd /tmp/$REPO_NAME.svn
 svn up
@@ -141,7 +128,5 @@ git checkout master
 
 git merge local-hedgehog
 
-# results in:
 
-# Automatic merge failed; fix conflicts and then commit the result.
-
+set +vx

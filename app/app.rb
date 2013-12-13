@@ -171,7 +171,7 @@ EOF
                 #run("git svn dcommit --add-author-from --username #{owner}")
                 cache_credentials(owner, password)
 ###                res = system2(password, "git svn rebase --username #{owner}", true)
-                res = system2(password, "git svn dcommit --add-author-from --username #{owner}",
+                res = system2(password, "git svn dcommit --no-rebase --add-author-from --username #{owner}",
                     true)
                 puts2 "after system"
                 if (success(res) and !commit_id.nil?)
