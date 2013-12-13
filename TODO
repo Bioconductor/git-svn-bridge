@@ -9,3 +9,4 @@ make sure all commit messages that svn sees are at least 10 characters (or compl
 wrote the commit message)
 avoid extra round trips / break the circle
 binary diffs
+Make sure we don't respond to pushes if they are not pushed to master!
