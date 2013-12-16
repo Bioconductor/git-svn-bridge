@@ -13,6 +13,9 @@
 
 ###REPO_NAME=gitsvntest0 # should this be set in environment as well?
 
+set -vx
+
+
 REMOTE="ssh -o StrictHostKeyChecking=no ubuntu@gitsvn.bioconductor.org" 
 
 
@@ -89,11 +92,13 @@ curl -c cookies.txt -X POST -d "username=$SVN_USERNAME&password=$SVN_PASSWORD&sp
 
 echo "create new bridge"
 
-curl -b cookies.txt  -d "rootdir=https://hedgehog.fhcrc.org/bioconductor/trunk/madman/RpacksTesting/&svndir=$REPO_NAME&githuburl=https://github.com/$GITHUB_USERNAME/$REPO_NAME&email=$EMAIL&conflict=svn-wins" $APP_URL/newproject
+curl -b cookies.txt  -d "rootdir=https://hedgehog.fhcrc.org/bioconductor/trunk/madman/RpacksTesting/&svndir=$REPO_NAME&githuburl=https://github.com/$GITHUB_USERNAME/$REPO_NAME&email=$EMAIL&conflict=git-wins" $APP_URL/newproject
 
 echo
 
 
 
   
+
+set +vx
 

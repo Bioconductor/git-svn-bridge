@@ -608,16 +608,6 @@ post '/newproject' do
 
             # FIXME - what if git and svn project names differ?
             # fixme - make sure both repos are valid
-            gitfilename = "data/monitored_git_repos.txt"
-            FileUtils.touch gitfilename unless File.file? gitfilename
-            gitfile = File.open(gitfilename, "a")
-            gitfile.puts "#{params[:githuburl]}\t#{gitprojname}\t#{session[:username]}\t#{params[:email]}\t#{encrypt(session[:password])}"
-            gitfile.close
-            svnfilename = "data/monitored_svn_repos.txt"
-            FileUtils.touch svnfilename unless File.file? svnfilename
-            svnfile = File.open(svnfilename, "a")
-            svnfile.puts "#{rootdir}#{svndir}\t#{gitprojname}\t#{session[:username]}\t#{params[:email]}\t#{encrypt(session[:password])}".gsub(/^#{SVN_URL}/, "")
-            svnfile.close
             git_ssh_url = "git@github.com:#{githubuser}/#{gitprojname}.git"
 
             wdir = "#{ENV['HOME']}/biocsync/#{svndir}"
@@ -704,6 +694,19 @@ post '/newproject' do
                     end
                 end
             }
+
+            gitfilename = "data/monitored_git_repos.txt"
+            FileUtils.touch gitfilename unless File.file? gitfilename
+            gitfile = File.open(gitfilename, "a")
+            gitfile.puts "#{params[:githuburl]}\t#{gitprojname}\t#{session[:username]}\t#{params[:email]}\t#{encrypt(session[:password])}"
+            gitfile.close
+            svnfilename = "data/monitored_svn_repos.txt"
+            FileUtils.touch svnfilename unless File.file? svnfilename
+            svnfile = File.open(svnfilename, "a")
+            svnfile.puts "#{rootdir}#{svndir}\t#{gitprojname}\t#{session[:username]}\t#{params[:email]}\t#{encrypt(session[:password])}".gsub(/^#{SVN_URL}/, "")
+            svnfile.close
+
+            
             haml :newproject_post, :locals => {:dupe_repo => false, :collab_ok => true}
         end 
     end
