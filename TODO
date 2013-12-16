@@ -15,3 +15,10 @@ make sure merge emails are sent when there is s conflict
     and that merge functionality works
     also, if commit is from some other svn or git user, need to make sure the email goes to them
 README.md (rst?) implications?
+handle github errors like this:
+    running command: git clone git@github.com:dtenenbaum/gitsvntest0.git 2>&1
+    result code was: pid 3627 exit 128
+    result was:
+    Cloning into 'gitsvntest0'...
+    ERROR: Storage server temporarily offline. See http://status.github.com for GitHub system status.
+    fatal: Could not read from remote repository.

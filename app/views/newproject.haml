@@ -18,7 +18,7 @@
         %span#svndir_error.error
         %label(for="svndir")Directory name:
         %input#svndir{name: "svndir", size: "30", type: "text"}
-  Enter the URL for an *empty* Github repository that you own.
+  Enter the URL for a Github repository that you own.
   (Example: https://github.com/username/reponame).
   %span#githuburl_error.error
   %input#githuburl(type="text" name="githuburl" size="60")
@@ -27,7 +27,21 @@
     %span#email_error.error
     %label(for="email")Your email address:
     %input#email(type="text" name="email" size="60")
-  %p Before submitting this page, make sure your Github repository is configured as follows:
+  %p
+    How do you want to handle merge conflicts in the initial merge?
+    You can ignore this if your Github repository is empty.
+    %table
+      %tr
+        %td
+          %input{checked: "checked", name: "conflict", type: "radio", value: "git-wins"}
+          Git wins unconditionally
+      %tr
+        %td
+          %input{name: "conflict", type: "radio", value: "svn-wins"}
+          SVN wins unconditionally
+
+
+    %p Before submitting this page, make sure your Github repository is configured as follows:
   %ul
     %li In a new browser window, open your Github repository page.
     %li

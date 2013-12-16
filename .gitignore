@@ -1,4 +1,5 @@
 testing/conf.sh
 app/data
 app/etc
+app/tmp
 testing/cookies.txt

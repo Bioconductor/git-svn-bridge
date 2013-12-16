@@ -593,6 +593,7 @@ post '/newproject' do
         githubuser = segs.pop
         svndir = params[:svndir]
         rootdir = params[:rootdir]
+        conflict = params[:conflict]
 
         data = URI.parse("https://api.github.com/repos/#{githubuser}/#{gitprojname}/collaborators").read
         obj = JSON.parse(data)
@@ -632,13 +633,6 @@ post '/newproject' do
                     #res = system2(session[:password],
                     #    "svn export --non-interactive --username #{session[:username]} --password $SVNPASS #{SVN_URL}#{SVN_ROOT}/#{svndir}")
                     Dir.chdir(gitprojname) do
-                        #run("git init")
-                        #run("git remote add origin #{git_ssh_url}")
-                        #run("git add *")
-                        #run("git commit -m 'first commit'")
-                        #run("git push -u origin master")
-
-                        #system({"SVNPASS" => session[:password]}, "")
                         res = system2(session[:password],
                             "svn log --non-interactive --limit 1 --username #{session[:username]} --password $SVNPASS #{rootdir}#{svndir}")
 
@@ -646,16 +640,6 @@ post '/newproject' do
                         res = system2(session[:password],
                             "svn log --non-interactive --limit 1 --username #{session[:username]} --password $SVNPASS #{rootdir}#{svndir}")
                         run("git config --add svn-remote.hedgehog.fetch :refs/remotes/hedgehog")
-                        #t = Tempfile.new("gitsvn")
-                        #t.close
-                        #res = system2(session[:password],
-                        #    "svn log --username #{session[:username]} --password $SVNPASS --xml --limit 1 -r 1:HEAD #{rootdir}#{svndir} > #{t.path}")
-                        # FIXME handle it if res != 0
-                        #xml = `svn log --username #{session[:username]} --xml --limit 1 -r 1:HEAD #{SVN_URL}#{SVN_ROOT}/#{svndir}`
-                        #xmlfile = File.open(t.path)
-                        #doc = Nokogiri::XML(xmlfile)
-                        #firstrev = doc.xpath("//logentry").first()['revision']
-                        #run("echo  | git svn fetch --username #{session[:username]} hedgehog -r #{firstrev}:HEAD")
                         res = system2(session[:password],
                             "git svn fetch --username #{session[:username]} hedgehog -r HEAD",
                             true)
@@ -670,22 +654,53 @@ post '/newproject' do
                         run("git config --add branch.local-hedgehog.merge refs/remotes/hedgehog")
                         # need password here?
                         run("git svn rebase --username #{session[:username]} hedgehog")
-                        run("git checkout master")
-                        merge_msg = "Creating git-svn bridge"
-                        run("git merge local-hedgehog")
-                        ####run %Q(git merge -m "#{eq(merge_msg)}" --no-ff --commit local-hedgehog)
-                        commit_id = `git rev-parse HEAD`.chomp
-                        result = run("git push origin master")
-                        if success(result)
-                            commit_ids_file = "#{APP_ROOT}/data/git_commit_ids.txt"
-                            FileUtils.touch(commit_ids_file)
-                            f = File.open(commit_ids_file, "a")
-                            puts2("trying to break circle on #{commit_id}")
-                            f.puts commit_id
+
+                        branchtomerge, branchtogoto = nil
+                        if conflict == "git-wins"
+                            branchtogoto = "local-hedgehog"
+                            branchtomerge = "master"
+                        elsif conflict == "svn-wins"
+                            branchtogoto = "master"
+                            branchtomerge = "local-hedgehog"
+                        else
+                            # we're in trouble!
                         end
 
-                        # OK, now svn changes have gone back to git but what about vice versa?
-                        # and what if there are conflicts here?
+                        run("git checkout #{branchtogoto}")
+
+                        result = run("git merge #{branchtomerge}")
+
+                        if (result.first != 0)
+                            puts2("the merge failed")
+                            conflict_files = `git diff --name-only --diff-filter=U`.split("\n")
+
+
+                            for file in conflict_files
+                                run("git checkout --theirs #{file}")
+                                run("git add #{file}")
+                            end
+                            # need this?
+                            #run("git add .")
+                            run("git commit -m 'conflicts resolved while setting up Git-SVN bridge'")
+
+                        else
+                            puts2("the merge succeeded")
+                        end
+
+                        if branchtogoto == "master"
+                            run("git push origin master")
+                        else
+                            res = system2(session[:password],
+                                "git svn dcommit --no-rebase --add-author-from --username #{session[:username]}",
+                                true)
+                        end
+
+
+                        # after merging...
+                        if (branchtogoto == "local-hedgehog")
+                            run("git checkout master")
+                        end
+
                     end
                 end
             }
