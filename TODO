@@ -4,9 +4,9 @@ Testing - ensure history prob doesn't happen again
 (partial) Better commit messages on both sides
 ? Include all git commit messages since last push in svn log?
 handle manual merging 
-allow non-empty github repos to be bridged
+X allow non-empty github repos to be bridged
 make sure all commit messages that svn sees are at least 10 characters (or complain to whoever
-wrote the commit message)
+wrote the commit message) -- hmm, since commits from git get the git author added in the svn commit message, this may not matter.
 X? avoid extra round trips / break the circle
 binary diffs
 Make sure we don't respond to pushes if they are not pushed to master! (may not be possible or important)

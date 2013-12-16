@@ -633,6 +633,7 @@ post '/newproject' do
                     #res = system2(session[:password],
                     #    "svn export --non-interactive --username #{session[:username]} --password $SVNPASS #{SVN_URL}#{SVN_ROOT}/#{svndir}")
                     Dir.chdir(gitprojname) do
+                        repo_is_empty = `git branch`.empty?
                         res = system2(session[:password],
                             "svn log --non-interactive --limit 1 --username #{session[:username]} --password $SVNPASS #{rootdir}#{svndir}")
 
@@ -656,6 +657,7 @@ post '/newproject' do
                         run("git svn rebase --username #{session[:username]} hedgehog")
 
                         branchtomerge, branchtogoto = nil
+                        conflict = "svn-wins" if repo_is_empty
                         if conflict == "git-wins"
                             branchtogoto = "local-hedgehog"
                             branchtomerge = "master"
