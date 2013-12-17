@@ -50,7 +50,12 @@ echo "here are some contents (git)" > README.md
 echo "here are some binary contents (git)" > foo
 gzip foo
 echo "here is an extra file" > extra
+cat > DESCRIPTION <<EOM
+Foo: Bar
+Baz: quux
+EOM
 git add README.md
+git add DESCRIPTION
 git add foo.gz
 git add extra
 git commit -m 'first git commit'
@@ -88,6 +93,11 @@ svn add README.md
 echo "here are some binary contents (svn)" > foo
 gzip foo
 svn add foo.gz
+cat > DESCRIPTION <<EOM
+Foo: blat (svn)
+Baz: quux
+EOM
+svn add DESCRIPTION
 #echo "here is an extra file" > extra
 #svn add extra
 svn ci -m "first commit (svn)"
@@ -103,7 +113,7 @@ curl -c cookies.txt -X POST -d "username=$SVN_USERNAME&password=$SVN_PASSWORD&sp
 
 echo "create new bridge"
 
-curl -b cookies.txt  -d "rootdir=https://hedgehog.fhcrc.org/bioconductor/trunk/madman/RpacksTesting/&svndir=$REPO_NAME&githuburl=https://github.com/$GITHUB_USERNAME/$REPO_NAME&email=$EMAIL&conflict=git-wins" $APP_URL/newproject
+curl -b cookies.txt  -d "rootdir=https://hedgehog.fhcrc.org/bioconductor/trunk/madman/RpacksTesting/&svndir=$REPO_NAME&githuburl=https://github.com/$GITHUB_USERNAME/$REPO_NAME&email=$EMAIL&conflict=svn-wins" $APP_URL/newproject
 
 echo
 

@@ -60,6 +60,11 @@ svn co --non-interactive --no-auth-cache --username $SVN_USERNAME --password $SV
 https://hedgehog.fhcrc.org/bioconductor/trunk/madman/RpacksTesting/$REPO_NAME
 cd $REPO_NAME
 echo "original contents of file (svn)" > README.md
+cat > DESCRIPTION <<EOM
+Foo: Bar
+Baz: quux
+EOM
+svn add DESCRIPTION
 svn add README.md
 svn ci -m "first commit (svn)"
 

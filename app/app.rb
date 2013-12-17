@@ -713,19 +713,19 @@ post '/newproject' do
                             # we're in trouble!
                         end
 
-                        run("git checkout #{branchtomerge}")
-                        if (File.exists? "DESCRIPTION")
-                            add_url_to_description(githuburl, "DESCRIPTION")
-                            run("git add DESCRIPTION")
-                            run %Q(git commit -m "automatically add github URL to DESCRIPTION")
-                            if (branchtomerge == "master")
-                                run("git push origin master")
-                            else
-                                res = system2(session[:password],
-                                    "git svn dcommit --no-rebase --add-author-from --username #{session[:username]}",
-                                    true)
-                            end
-                        end
+                        # run("git checkout #{branchtomerge}")
+                        # if (File.exists? "DESCRIPTION")
+                        #     add_url_to_description(githuburl, "DESCRIPTION")
+                        #     run("git add DESCRIPTION")
+                        #     run %Q(git commit -m "automatically add github URL to DESCRIPTION")
+                        #     if (branchtomerge == "master")
+                        #         run("git push origin master")
+                        #     else
+                        #         res = system2(session[:password],
+                        #             "git svn dcommit --no-rebase --add-author-from --username #{session[:username]}",
+                        #             true)
+                        #     end
+                        # end
 
                         run("git checkout #{branchtogoto}")
 
