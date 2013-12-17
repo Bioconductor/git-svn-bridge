@@ -437,6 +437,63 @@ EOF
         $gost.decrypt_string(decoded)
     end
 
+
+    def add_url_to_description(github_url, descriptionfile)
+        lines = File.readlines(descriptionfile)
+        lines = lines.collect {|i| i.chomp}
+        lines = lines.reject {|i| i.empty?}
+        nonurllines = []
+        url = ""
+        urlmode = false
+        urlstartsat = nil
+        urllinelength = nil
+        lines.each_with_index do |line, idx|
+            if line =~ /^URL:/
+                urllinelength = 0
+                urlstartsat = idx
+                urlmode = true
+                url = line
+                next
+            end
+            if urlmode
+                urlmode = false unless line =~ /^\s/
+                if urlmode
+                    url += "\n#{line}"
+                    urllinelength += 1
+                end
+            end
+        end
+        url.sub!(/^URL:\s*/, "")
+        if url.empty?
+            nonurllines = lines
+            nonurllines.push "URL: #{github_url}"
+        else
+            lines.each_with_index do |line, idx|
+                if idx < urlstartsat || idx > (urlstartsat + urllinelength)
+                    nonurllines.push line
+                end
+            end
+            url = url.gsub /\s+/, "" if url =~ /,\s/
+            if url =~ /\s/
+                segs = url.split(/\s+/)
+            elsif url =~ /,/
+                segs = url.split(",")
+            else
+                segs = [url]
+            end
+            segs.push github_url unless segs.include? github_url
+            segs[0] = "URL: #{segs.first}"
+            nonurllines.push segs.join " "
+        end
+        nonurllines = nonurllines.reject {|i| i.empty?}
+        f = open(descriptionfile, "w")
+        for line in nonurllines
+            f.puts line
+        end
+        f.close
+    end
+
+
 end # helpers
 
 
@@ -656,7 +713,23 @@ post '/newproject' do
                             # we're in trouble!
                         end
 
+                        run("git checkout #{branchtomerge}")
+                        if (File.exists? "DESCRIPTION")
+                            add_url_to_description(githuburl, "DESCRIPTION")
+                            run("git add DESCRIPTION")
+                            run %Q(git commit -m "automatically add github URL to DESCRIPTION")
+                            if (branchtomerge == "master")
+                                run("git push origin master")
+                            else
+                                res = system2(session[:password],
+                                    "git svn dcommit --no-rebase --add-author-from --username #{session[:username]}",
+                                    true)
+                            end
+                        end
+
                         run("git checkout #{branchtogoto}")
+
+
 
                         result = run("git merge #{branchtomerge}")
 

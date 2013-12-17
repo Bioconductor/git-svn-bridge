@@ -55,15 +55,6 @@ def add_url_to_description(github_url, descriptionfile)
         f.puts line
     end
     f.close
-
-    # puts "is url empty? #{url.empty?}"
-    # puts "urlstartsat = #{urlstartsat}"
-    # puts "urllinelength = #{urllinelength}"
-    # puts "url=\n#{url}"
-    # puts "nonurllines:"
-    # pp nonurllines
-    # puts `cat #{descriptionfile}`
-    # puts "done"
 end
 
 ##### 
