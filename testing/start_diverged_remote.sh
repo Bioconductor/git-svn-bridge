@@ -47,7 +47,12 @@ cd $gitwc
 git clone git@github.com:$GITHUB_USERNAME/$REPO_NAME.git
 cd $REPO_NAME
 echo "here are some contents (git)" > README.md
+echo "here are some binary contents (git)" > foo
+gzip foo
+echo "here is an extra file" > extra
 git add README.md
+git add foo.gz
+git add extra
 git commit -m 'first git commit'
 git push origin master
 
@@ -63,6 +68,7 @@ $REMOTE "rm -rf /home/ubuntu/biocsync/$REPO_NAME"
 
 #$REMOTE "svn up $APP_DIR"
 $REMOTE "cd /home/ubuntu/bioc-git-svn && git pull"
+#$REMOTE "git checkout gitsvn" # needed?
 $REMOTE "touch $APP_DIR/tmp/restart.txt"
 
 echo "delete the svn repo"
@@ -79,6 +85,11 @@ https://hedgehog.fhcrc.org/bioconductor/trunk/madman/RpacksTesting/$REPO_NAME
 cd $REPO_NAME
 echo "here are some contents (svn)" > README.md
 svn add README.md
+echo "here are some binary contents (svn)" > foo
+gzip foo
+svn add foo.gz
+#echo "here is an extra file" > extra
+#svn add extra
 svn ci -m "first commit (svn)"
 
 cd $oldwd
