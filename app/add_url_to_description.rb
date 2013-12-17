@@ -3,7 +3,7 @@
 require 'dcf'
 require 'pp'
 
-def add_url_to_description(url, descriptionfile)
+def add_url_to_description(github_url, descriptionfile)
     # txt = File.readlines(descriptionfile).join
     # dcf = Dcf.parse txt
     # if dcf.nil?
@@ -47,12 +47,25 @@ def add_url_to_description(url, descriptionfile)
     url.sub!(/^URL:\s*/, "")
     if url.empty?
         nonurllines = lines
+        nonurllines.push "URL: #{github_url}"
+        # return todescfile(nonurllines, descriptionfile)
     else
         lines.each_with_index do |line, idx|
             if idx < urlstartsat || idx > (urlstartsat + urllinelength)
                 nonurllines.push line
             end
         end
+        url = url.gsub /\s+/, "" if url =~ /,\s/
+        if url =~ /\s/
+            segs = url.split(/\s+/)
+        elsif url =~ /,/
+            segs = url.split(",")
+        else
+            segs = [url]
+        end
+        segs.push github_url
+        nonurllines.push ...
+
     end
 
     puts "is url empty? #{url.empty?}"
