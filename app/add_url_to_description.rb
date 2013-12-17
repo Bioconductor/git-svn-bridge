@@ -1,20 +1,8 @@
 #!/usr/bin/env ruby
 
-require 'dcf'
 require 'pp'
 
 def add_url_to_description(github_url, descriptionfile)
-    # txt = File.readlines(descriptionfile).join
-    # dcf = Dcf.parse txt
-    # if dcf.nil?
-    #     puts("oops, Dcf.parse returned nil")
-    #     return
-    # end
-    # if dcf.length > 1
-    #     puts("oops, more than one dcf record in this file!")
-    #     return
-    # end
-    #pp dcf
     lines = File.readlines(descriptionfile)
     lines = lines.collect {|i| i.chomp}
     lines = lines.reject {|i| i.empty?}
@@ -32,11 +20,6 @@ def add_url_to_description(github_url, descriptionfile)
             next
         end
         if urlmode
-            puts "urlmode is true, line is #{line}"
-            if line =~ /^\s/
-            else
-                urlmode = false
-            end
             urlmode = false unless line =~ /^\s/
             if urlmode
                 url += "\n#{line}"
@@ -48,7 +31,6 @@ def add_url_to_description(github_url, descriptionfile)
     if url.empty?
         nonurllines = lines
         nonurllines.push "URL: #{github_url}"
-        # return todescfile(nonurllines, descriptionfile)
     else
         lines.each_with_index do |line, idx|
             if idx < urlstartsat || idx > (urlstartsat + urllinelength)
@@ -63,17 +45,25 @@ def add_url_to_description(github_url, descriptionfile)
         else
             segs = [url]
         end
-        segs.push github_url
-        nonurllines.push ...
-
+        segs.push github_url unless segs.include? github_url
+        segs[0] = "URL: #{segs.first}"
+        nonurllines.push segs.join " "
     end
+    nonurllines = nonurllines.reject {|i| i.empty?}
+    f = open(descriptionfile, "w")
+    for line in nonurllines
+        f.puts line
+    end
+    f.close
 
-    puts "is url empty? #{url.empty?}"
-    puts "urlstartsat = #{urlstartsat}"
-    puts "urllinelength = #{urllinelength}"
-    puts "url=\n#{url}"
-    puts "nonurllines:"
-    pp nonurllines
+    # puts "is url empty? #{url.empty?}"
+    # puts "urlstartsat = #{urlstartsat}"
+    # puts "urllinelength = #{urllinelength}"
+    # puts "url=\n#{url}"
+    # puts "nonurllines:"
+    # pp nonurllines
+    # puts `cat #{descriptionfile}`
+    # puts "done"
 end
 
 ##### 
@@ -81,10 +71,9 @@ end
 descfile=<<"EOT"
 Foo: bar
 Baz: bunk
-URL:http://1
-   http://2
-   http://3
+URL: http://0 https://github.com/dtenenbaum/gitsvntest0 http://1
 This:that
+  cont
 EOT
 
 f = File.open("/tmp/DESCRIPTION", "w")
