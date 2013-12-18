@@ -771,16 +771,16 @@ post '/newproject' do
             svnfile.puts "#{rootdir}#{svndir}\t#{gitprojname}\t#{session[:username]}\t#{params[:email]}\t#{encrypt(session[:password])}".gsub(/^#{SVN_URL}/, "")
             svnfile.close
 
-            Dir.chdir("#{ENV['HOME']}/biocsync/#{gitprojname}") do
-                # we should be on master, but...
-                run("git checkout master")
-                if (File.exists? "DESCRIPTION")
-                    add_url_to_description(githuburl, "DESCRIPTION")
-                    run("git add DESCRIPTION")
-                    run %Q(git commit -m "automatically add github URL to DESCRIPTION")
-                    run("git push origin master")
-                end
-            end
+            # Dir.chdir("#{ENV['HOME']}/biocsync/#{gitprojname}") do
+            #     # we should be on master, but...
+            #     run("git checkout master")
+            #     if (File.exists? "DESCRIPTION")
+            #         add_url_to_description(githuburl, "DESCRIPTION")
+            #         run("git add DESCRIPTION")
+            #         run %Q(git commit -m "automatically add github URL to DESCRIPTION")
+            #         run("git push origin master")
+            #     end
+            # end
             
             haml :newproject_post, :locals => {:dupe_repo => false, :collab_ok => true}
         end 
