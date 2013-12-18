@@ -30,7 +30,7 @@ echo "add collaborator"
 curl -i -u "dtenenbaum:$GITHUB_PASSWORD" -d "" -X PUT https://api.github.com/repos/$GITHUB_USERNAME/$REPO_NAME/collaborators/bioc-sync
 
 echo "add hook"
-curl -i -u $GITHUB_USERNAME:$GITHUB_PASSWORD -d "{\"name\":\"web\",\"config\":{\"url\":\"http://gitsvn.bioconductor.org/git-push-hook\"}}" -X POST https://api.github.com/repos/$GITHUB_USERNAME/$REPO_NAME/hooks
+curl -i -u $GITHUB_USERNAME:$GITHUB_PASSWORD -d "{\"name\":\"web\",\"config\":{\"url\":\"https://gitsvn.bioconductor.org/git-push-hook\"}}" -X POST https://api.github.com/repos/$GITHUB_USERNAME/$REPO_NAME/hooks
 
 REMOTE="ssh -o StrictHostKeyChecking=no ubuntu@gitsvn.bioconductor.org"
 
@@ -75,11 +75,11 @@ rm -rf $tmpdir
 echo "log in to web app"
 
 rm -f cookies.txt
-curl -c cookies.txt -X POST -d "username=$SVN_USERNAME&password=$SVN_PASSWORD&specialpass=$SPECIALPASS" http://gitsvn.bioconductor.org/login > /dev/null 2>&1
+curl -c cookies.txt -X POST -d "username=$SVN_USERNAME&password=$SVN_PASSWORD&specialpass=$SPECIALPASS" https://gitsvn.bioconductor.org/login > /dev/null 2>&1
 
 echo "create new bridge"
 
-curl -b cookies.txt  -d "rootdir=https://hedgehog.fhcrc.org/bioconductor/trunk/madman/RpacksTesting/&svndir=$REPO_NAME&githuburl=https://github.com/$GITHUB_USERNAME/$REPO_NAME&email=$EMAIL" http://gitsvn.bioconductor.org/newproject
+curl -b cookies.txt  -d "rootdir=https://hedgehog.fhcrc.org/bioconductor/trunk/madman/RpacksTesting/&svndir=$REPO_NAME&githuburl=https://github.com/$GITHUB_USERNAME/$REPO_NAME&email=$EMAIL" https://gitsvn.bioconductor.org/newproject
 
 echo
 
