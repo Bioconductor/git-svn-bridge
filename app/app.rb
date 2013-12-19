@@ -522,10 +522,6 @@ get '/root' do
     Dir.pwd
 end
 
-get '/' do
-    usessl!
-    haml :index
-end
 
 get '/login' do
     usessl!
