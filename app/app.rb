@@ -572,6 +572,10 @@ post '/git-push-hook' do
     puts2 "in /git-push-hook!!!!"
     puts2 "!!!!"
     #push = JSON.parse(params[:payload])
+
+    unless params.nil? or params.is_a? Hash or params.has_key? :payload
+        return "malformed push payload"
+    end
     push = params[:payload]
     log = open("data/gitpushes.log", "a")
     log.puts push
@@ -876,3 +880,4 @@ post '/merge/:project/:direction' do
     session[:message] = "Changes merged successfully."
     redirect url('/')    
 end
+
