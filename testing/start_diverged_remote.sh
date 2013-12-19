@@ -37,7 +37,7 @@ echo "add collaborator"
 curl -i -u "dtenenbaum:$GITHUB_PASSWORD" -d "" -X PUT https://api.github.com/repos/$GITHUB_USERNAME/$REPO_NAME/collaborators/bioc-sync
 
 echo "add hook"
-curl -i -u $GITHUB_USERNAME:$GITHUB_PASSWORD -d "{\"name\":\"web\",\"config\":{\"url\":\"$APP_URL/git-push-hook\"}}" -X POST https://api.github.com/repos/$GITHUB_USERNAME/$REPO_NAME/hooks
+curl -i -u $GITHUB_USERNAME:$GITHUB_PASSWORD -d "{\"name\":\"web\",\"config\":{\"url\":\"$APP_URL/git-push-hook\", \"ssl:\" 3}}" -X POST https://api.github.com/repos/$GITHUB_USERNAME/$REPO_NAME/hooks
 
 
 echo "get local git working copy"

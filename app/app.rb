@@ -53,6 +53,12 @@ helpers do
     end
 
 
+    def usessl!
+        return unless ["gitsvn.bioconductor.org", "23.23.227.214"].include? \
+            request.env['HTTP_HOST'].downcase 
+        halt [301, 'use https://gitsvn.bioconductor.org instead of http://gitsvn.bioconductor.org' ] unless request.secure?
+    end
+
     def title()
         "Bioconductor Git-SVN Bridge"
     end
@@ -502,14 +508,17 @@ get '/root' do
 end
 
 get '/' do
+    usessl!
     haml :index
 end
 
 get '/login' do
+    usessl!
     haml :login
 end
 
 post '/login' do
+    usessl!
     f = File.open("etc/specialpass")
     specialpass = f.readlines.first.chomp
     if params[:specialpass] != specialpass
@@ -546,6 +555,7 @@ end
 
 
 get '/logout' do
+    usessl!
     session.delete :username
     session.delete :password
     redirect url('/')
@@ -562,6 +572,7 @@ end
 
 
 post '/git-push-hook' do
+    # DON'T specify usessl! here!
     # make sure the request comes from one of these IP addresses:
     # 204.232.175.64/27, 192.30.252.0/22. (or is us, testing)
     unless request.ip =~ /^204\.232\.175|^192\.30\.252|^140\.107/
@@ -610,6 +621,7 @@ post '/git-push-hook' do
 end
 
 get '/svn-commit-hook' do
+    usessl!
     sleep 1 # give app a chance to cache the commit id
     # make sure request comes from a hutch ip
     unless request.ip  =~ /^140\.107|^127\.0\.0\.1$/ #  140.107.170.120 appears to be hedgehog
@@ -636,11 +648,13 @@ end
 
 get '/newproject' do
     protected!
+    usessl!
     haml :newproject
 end
 
 post '/newproject' do
     protected!
+    usessl!
     puts2 "in post handler for newproject"
     dupe_repo = dupe_repo?(params)
     if dupe_repo
@@ -808,6 +822,7 @@ end
 # FIXME - um, what about binary diffs?
 # need to test
 get '/merge/:project/:direction' do
+    usessl!
     unless logged_in?
         session[:redirect_url] = request.path
         redirect to('/login')
@@ -847,6 +862,7 @@ get '/merge/:project/:direction' do
 end
 
 post '/merge/:project/:direction' do
+    usessl!
     # fixme - what are the implications of ensuring the user is logged in here?
     project = params[:project]
     direction = params[:direction]
