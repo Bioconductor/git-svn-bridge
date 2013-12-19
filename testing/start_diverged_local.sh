@@ -37,7 +37,7 @@ curl -i -u "dtenenbaum:$GITHUB_PASSWORD" -d "" -X PUT https://api.github.com/rep
 
 echo "add hook"
 # hmm, this is weird....
-curl -i -u $GITHUB_USERNAME:$GITHUB_PASSWORD -d "{\"name\":\"web\",\"config\":{\"url\":\"$APP_URL/git-push-hook\"}}" -X POST https://api.github.com/repos/$GITHUB_USERNAME/$REPO_NAME/hooks
+curl -i -u $GITHUB_USERNAME:$GITHUB_PASSWORD -d "{\"name\":\"web\",\"config\":{\"url\":\"$INSECURE_APP_URL/git-push-hook\"}}" -X POST https://api.github.com/repos/$GITHUB_USERNAME/$REPO_NAME/hooks
 
 
 echo "get local git working copy"
