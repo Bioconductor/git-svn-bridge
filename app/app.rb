@@ -585,8 +585,7 @@ post '/git-push-hook' do
     #push = JSON.parse(params[:payload])
 
     # FIXME you could do more checking on the format of params[:payload]
-    if params.nil? or params.empty? or !params.is_a? Hash \
-        or !params.has_key? :payload
+    unless params.has_key? :payload
         puts2 "malformed push payload"
         return "malformed push payload"
     end
