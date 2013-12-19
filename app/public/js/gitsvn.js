@@ -4,7 +4,7 @@ $(function() {
      $("#tester").click(function() {
         validateForm();
       });
-     $("#submitbutton").removeAttr("disabled");
+     //$("#submitbutton").removeAttr("disabled");
 
 });
 
@@ -40,8 +40,22 @@ function validateForm()
         }
     }
 
+
+
+
     if (errors)
         return(false);
+
+
+    $(".certify").each((function(item){
+        console.log("looking at " + $(this).attr("id"));
+        console.log("checked is " + $(this).is(":checked"));
+        if (!$(this).is(":checked")) {
+            errors = true;
+            var selector = "#" + $(this).attr("id") + "_error";
+            $(selector).html("Must be checked.");
+        }
+    }));
 
     if (!validateEmail($("#email").val()))
     {

@@ -63,8 +63,18 @@
       in the URL box and click "Update Settings". This allows
       Bioconductor to know when there has been a push to your Github
       repository.
+  %p
+    %span#certify1_error.error
+    %input.certify#certify1{type: "checkbox", name: "certify1", value: "true"}
+    I certify that I have done the above steps and I understand that if I don't do them,
+    my Git-SVN bridge will not work correctly.
+  %p
+    %span#certify2_error.error
+    %input.certify#certify2{type: "checkbox", name: "certify2", value: "true"}
+    I certify that I will respond to pull requests and issues filed in this Github
+    repository.
 
   %p
-    %input#submitbutton(type="submit" value="Create New Project" disabled)
+    %input#submitbutton{type: "submit", id: "submitbutton", value: "Create New Project"}
 -#  %p#tester
 -#    clickme

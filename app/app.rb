@@ -54,9 +54,18 @@ helpers do
 
 
     def usessl!
-        return unless ["gitsvn.bioconductor.org", "23.23.227.214"].include? \
-            request.env['HTTP_HOST'].downcase 
-        halt [301, 'use https://gitsvn.bioconductor.org instead of http://gitsvn.bioconductor.org' ] unless request.secure?
+        host = request.env['HTTP_HOST']
+        if host.nil?
+            puts2 "alert: request.env['HTTP_HOST'] was nil..."
+            host = "nil"
+        end
+        unless ["gitsvn.bioconductor.org", 
+            "23.23.227.214", "nil"].include? host.downcase
+            return
+        end
+        unless request.secure?
+            halt [301, 'use https://gitsvn.bioconductor.org instead of http://gitsvn.bioconductor.org' ]
+        end
     end
 
     def title()
@@ -903,3 +912,6 @@ post '/merge/:project/:direction' do
     redirect url('/')    
 end
 
+get "/foo" do
+    return request.env['HTTP_HOST']
+end
