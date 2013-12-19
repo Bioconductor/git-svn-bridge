@@ -8,6 +8,8 @@
 # SPECIALPASS
 # EMAIL
 # REPO_NAME
+# APP_URL
+# INSECURE_APP_URL
 
 ###REPO_NAME=gitsvntest0 # should this be set in environment as well?
 

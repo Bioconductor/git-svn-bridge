@@ -9,6 +9,7 @@
 # EMAIL
 # REPO_NAME
 # APP_URL
+# INSECURE_APP_URL
 # APP_DIR
 
 ###REPO_NAME=gitsvntest0 # should this be set in environment as well?
