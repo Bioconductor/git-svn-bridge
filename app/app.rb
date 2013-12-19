@@ -52,17 +52,23 @@ helpers do
         halt [ 401, 'Not Authorized' ] unless logged_in?
     end
 
-
-    def usessl!
+    def production?
         host = request.env['HTTP_HOST']
         if host.nil?
             puts2 "alert: request.env['HTTP_HOST'] was nil..."
             host = "nil"
         end
-        unless ["gitsvn.bioconductor.org", 
+        if ["gitsvn.bioconductor.org", 
             "23.23.227.214", "nil"].include? host.downcase
-            return
+            true
+        else
+            false
         end
+
+    end
+
+    def usessl!
+        return unless production?
         unless request.secure?
             halt [301, 'use https://gitsvn.bioconductor.org instead of http://gitsvn.bioconductor.org' ]
         end
@@ -631,6 +637,14 @@ post '/git-push-hook' do
     "received"
 end
 
+get '/' do
+    if production? and !request.secure?
+        redirect_to "https://gitsvn.bioconductor.org"
+    else
+        haml :index
+    end
+end
+
 get '/svn-commit-hook' do
     usessl!
     sleep 1 # give app a chance to cache the commit id
@@ -912,6 +926,3 @@ post '/merge/:project/:direction' do
     redirect url('/')    
 end
 
-get "/foo" do
-    return request.env['HTTP_HOST']
-end
