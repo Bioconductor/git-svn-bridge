@@ -635,7 +635,7 @@ end
 
 get '/' do
     if production? and !request.secure?
-        redirect_to "https://gitsvn.bioconductor.org"
+        redirect to("https://gitsvn.bioconductor.org")
     else
         haml :index
     end
