@@ -573,13 +573,16 @@ post '/git-push-hook' do
     puts2 "!!!!"
     #push = JSON.parse(params[:payload])
 
-    unless params.nil? or params.is_a? Hash or params.has_key? :payload
+    # FIXME you could do more checking on the format of params[:payload]
+    if params.nil? or params.empty? or !params.is_a? Hash \
+        or !params.has_key? :payload
         return "malformed push payload"
     end
     push = params[:payload]
     log = open("data/gitpushes.log", "a")
     log.puts push
     log.close
+    # FIXME trap error here
     gitpush = JSON.parse(params[:payload])
 
     ## make sure we're not in a vicious circle...
