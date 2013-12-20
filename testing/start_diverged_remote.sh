@@ -67,9 +67,8 @@ cd $oldwd
 echo "run remote commands"
 
 #$REMOTE "rm -f $APP_DIR/data/monitored_*"
-$REMOTE "touch $APP_DIR/data/monitored_git_repos.txt $APP_DIR/data/monitored_svn_repos.txt"
-$REMOTE "cd $APP_DIR/data && grep -v $REPO_NAME monitored_svn_repos.txt > tmp ; rm monitored_svn_repos.txt && mv tmp monitored_svn_repos.txt"
-$REMOTE "cd $APP_DIR/data && grep -v $REPO_NAME monitored_git_repos.txt > tmp ; rm monitored_git_repos.txt && mv tmp monitored_git_repos.txt"
+$REMOTE "echo 'delete from bridges where local_wc = \"$REPO_NAME\";'| sqlite3 ~/app/data/gitsvn.sqlite3"
+
 $REMOTE "rm -rf /home/ubuntu/biocsync/$REPO_NAME"
 
 #$REMOTE "svn up $APP_DIR"

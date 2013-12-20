@@ -60,6 +60,46 @@ DB_FILE = "#{settings.root}/data/gitsvn.sqlite3"
             svn_username)
     end
 
+    # Remove Trailing Slash
+    class String
+        def rts()
+            self.sub(/\/$/, "")
+        end
+    end
+
+    def get_repos_by_svn_path(svn_path)
+        svn_path = "#{SVN_URL}#{svn_path}" unless svn_path =~ /^#{SVN_URL}/
+        repos = get_db().execute("select svn_repos from bridges")
+        return nil if repos.nil? or repos.empty? or \
+            repos.first.nil? or repos.first.empty?
+        repos = repos.map{|i| i.first}
+        repos.find_all {|i| svn_path =~ /^#{i}/}
+    end
+
+    def get_bridge_from_github_url(github_url)
+        get_bridge("github_url", github_url)
+    end
+
+    def get_bridge(column, path)
+        path = path.rts if column == "github_url"
+        stmt=<<-"EOF"
+            select * from bridges, users
+            where bridges.#{column} = ?
+            and bridges.user_id = users.rowid;
+        EOF
+        columns, rows = get_db().execute2(stmt, path)
+        hsh = {}
+        return nil if rows.nil?
+        columns.each_with_index do |col, i|
+            hsh[col.to_sym] = rows[i]
+        end
+        hsh
+    end
+
+    def get_bridge_from_svn_url(svn_url)
+        get_bridge("svn_repos", svn_url)
+    end
+
     def insert_user_record(username, password, email=nil)
         get_db().execute("insert into users values (?, ?, ?)",
             username, email, encrypt(password))
@@ -191,16 +231,16 @@ helpers do
     end
 
     def handle_git_push(gitpush)
-        repository = gitpush['repository']['url'].sub(/\/$/, "")
+        repository = gitpush['repository']['url'].rts
         monitored_repos = []
         repos, local_wc, owner, email, password, encpass = nil
-        File.readlines("data/monitored_git_repos.txt").each do |line|
-
-            repos, local_wc, owner, email, encpass = line.chomp.split("\t")
-            password = decrypt(encpass)
-            repos.sub! /\/$/, ""
-        end
-        return if repos.nil? # we're not monitoring this repo
+        bridge = get_bridge_from_github_url(repository)
+        return if bridge.nil?
+        repos = repository
+        local_wc = bridge[:local_wc]
+        owner = bridge[:svn_username]
+        email = bridge[:email]
+        encpass = bridge[:encpass]
 
         # start locking here
         wdir = "#{ENV['HOME']}/biocsync/#{local_wc}"
@@ -282,10 +322,6 @@ EOF
         f = File.open("data/config")
         p = f.readlines().first().chomp
 
-        #cmd = "svn log --username pkgbuild --non-interactive -v --xml -r " + 
-        #{}"#{rev_num} --limit 1 https://hedgehog.fhcrc.org/bioconductor/"
-        #puts2("before system")
-        #res = system({"SVNPASS" => p},
         # FIXME - fix this
         cmd = "svn log --xml -v --username pkgbuild --password #{p} --non-interactive " +
           "-r #{rev_num} --limit 1 https://hedgehog.fhcrc.org/bioconductor/"
@@ -298,16 +334,15 @@ EOF
         for path in paths
             changed_paths.push path.children.to_s
         end
-        monitored_repos = []
-        File.readlines('data/monitored_svn_repos.txt').each do |line|
-            monitored_repos.push line.chomp
-        end
+        puts2 "CHANGED_PATHS = "
+        pp2 changed_paths
+
         ret = {}
         for item in changed_paths
-            for repo in monitored_repos
-                if item =~ /^#{repo.split("\t").first}/
-                    ret[repo] = 1
-                end
+            repos = get_repos_by_svn_path(item)
+            next if repos.nil?
+            for repo in repos
+                ret[repo] = 1
             end
         end
         ret.keys
@@ -401,13 +436,14 @@ MESSAGE_END
 
     def handle_svn_commit(repo)
         repos, local_wc, owner, password, email, encpass, commit_msg = nil
-        File.readlines("data/monitored_svn_repos.txt").each do |line|
-            if line =~ /^#{repo}/
-                puts2 "line == #{line}, repo=#{repo}"
-                repos, local_wc, owner, email, encpass = line.chomp.split("\t")
-                password = decrypt(encpass)
-            end
-        end
+        bridge = get_bridge_from_svn_url(repo)
+        pp2 bridge
+        repos = repo.sub(/^#{SVN_URL}/, "")
+        local_wc = bridge[:local_wc]
+        owner = bridge[:svn_username]
+        email = bridge[:email]
+        encpass = bridge[:encpass]
+        password = decrypt(encpass)
         puts2 "owner is #{owner}"
         res = system2(password, "svn log -v --xml --limit 1 --non-interactive --no-auth-cache --username #{owner} --password $SVNPASS #{SVN_URL}#{repos}", false)
         doc = Nokogiri::Slop(res.last)
@@ -742,7 +778,7 @@ post '/newproject' do
     else
         puts2 "dupe_repo is FALSE!!!"
         # do stuff
-        githuburl = params[:githuburl].sub(/\/$/, "")
+        githuburl = params[:githuburl].rts
         segs = githuburl.split("/")
         gitprojname = segs.pop
         githubuser = segs.pop
@@ -887,7 +923,7 @@ post '/newproject' do
                     );
             EOF
             get_db().execute(stmt, "#{rootdir}#{svndir}",
-                svndir, user_id, params[:githuburl])
+                svndir, user_id, params[:githuburl].rts)
 
             # Dir.chdir("#{ENV['HOME']}/biocsync/#{gitprojname}") do
             #     # we should be on master, but...
