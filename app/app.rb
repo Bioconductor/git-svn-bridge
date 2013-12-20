@@ -87,6 +87,11 @@ DB_FILE = "#{settings.root}/data/gitsvn.sqlite3"
         end
     end
 
+    def get_user_id(username)
+        puts2 "USERNAME = #{username}"
+        get_db().get_first_row("select rowid from users where svn_username = ?",
+            username).first
+    end
 
 # FIXME handle it if our app is located somewhere else
 # (settings.root does not seem to work as expected)
@@ -488,30 +493,11 @@ EOF
 
 
     def dupe_repo?(params)
-        gitfilename = "data/monitored_svn_repos.txt"
-        return false unless File.file? gitfilename
-        gitfile = File.open(gitfilename)
-        gitlines = gitfile.readlines
-        gitfile.close
-
-        for line in gitlines
-            # FIXME this does not ever return true but it seems like it should.
-            # not too important because we catch it down below (svn section).
-            return true if line =~ /^#{params[:githuburl]}/
-        end
-
-        svnfilename = "data/monitored_svn_repos.txt"
-        return false unless File.file? svnfilename
-        svnfile = File.open(svnfilename)
-        svnlines = svnfile.readlines
-        svnfile.close
-
-        url = "#{params[:rootdir]}#{params[:svndir]}".gsub(/^#{SVN_URL}/, "")
-        pat = /#{url}/
-        for line in svnlines
-            return true if line =~ pat
-        end
-        false
+        svn_repos = "#{params[:rootdir]}#{params[:svndir]}"
+        row = 
+          get_db().get_first_row("select * from bridges where svn_repos = ?",
+            svn_repos)
+        !row.nil?
     end
 
 
@@ -766,6 +752,7 @@ post '/newproject' do
 
         update_user_record(session[:username], session[:password],
             params[:email])
+        user_id = get_user_id(session[:username])
 
         data = URI.parse("https://api.github.com/repos/#{githubuser}/#{gitprojname}/collaborators").read
         obj = JSON.parse(data)
@@ -884,16 +871,23 @@ post '/newproject' do
             # clean things up. NB. sometimes we don't see the expected push hook action
             # here.
 
-            gitfilename = "data/monitored_git_repos.txt"
-            FileUtils.touch gitfilename unless File.file? gitfilename
-            gitfile = File.open(gitfilename, "a")
-            gitfile.puts "#{params[:githuburl]}\t#{gitprojname}\t#{session[:username]}\t#{params[:email]}\t#{encrypt(session[:password])}"
-            gitfile.close
-            svnfilename = "data/monitored_svn_repos.txt"
-            FileUtils.touch svnfilename unless File.file? svnfilename
-            svnfile = File.open(svnfilename, "a")
-            svnfile.puts "#{rootdir}#{svndir}\t#{gitprojname}\t#{session[:username]}\t#{params[:email]}\t#{encrypt(session[:password])}".gsub(/^#{SVN_URL}/, "")
-            svnfile.close
+            svn_repos = ""
+            stmt=<<-EOF
+                insert into bridges 
+                    (
+                        svn_repos,
+                        local_wc,
+                        user_id,
+                        github_url
+                    ) values (
+                        ?,
+                        ?,
+                        ?,
+                        ?
+                    );
+            EOF
+            get_db().execute(stmt, "#{rootdir}#{svndir}",
+                svndir, user_id, params[:githuburl])
 
             # Dir.chdir("#{ENV['HOME']}/biocsync/#{gitprojname}") do
             #     # we should be on master, but...
