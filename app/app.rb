@@ -432,6 +432,8 @@ EOF
         gitfile.close
 
         for line in gitlines
+            # FIXME this does not ever return true but it seems like it should.
+            # not too important because we catch it down below (svn section).
             return true if line =~ /^#{params[:githuburl]}/
         end
 
@@ -804,6 +806,12 @@ post '/newproject' do
                     end
                 end
             }
+
+            # FIXME should we sleep for a couple seconds here?
+            # to make sure that the push finishes before we register our interest in this
+            # repos. Not urgent, since we wouldn't act on this push anyway, but it would
+            # clean things up. NB. sometimes we don't see the expected push hook action
+            # here.
 
             gitfilename = "data/monitored_git_repos.txt"
             FileUtils.touch gitfilename unless File.file? gitfilename
