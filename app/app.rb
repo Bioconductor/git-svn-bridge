@@ -441,8 +441,10 @@ EOF
         svnlines = svnfile.readlines
         svnfile.close
 
+        url = "#{params[:rootdir]}#{params[:svndir]}".gsub(/^#{SVN_URL}/, "")
+        pat = /#{url}/
         for line in svnlines
-            return true if line =~ /^#{params[:rootdir]}#{params[:svndir]}/
+            return true if line =~ pat
         end
         false
     end
