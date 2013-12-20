@@ -14,6 +14,7 @@ require 'fileutils'
 require 'tempfile'
 require 'tmpdir'
 require 'open3'
+require 'sqlite3'
 
 def breakpoint()
     binding.pry if ENV['RACK_ENV'].nil?
@@ -24,6 +25,68 @@ end
 enable :sessions
 
 set :session_secret, IO.readlines("data/session_secret.txt").first
+
+DB_FILE = "#{settings.root}/data/gitsvn.sqlite3"
+
+    def get_db()
+        if File.exists? DB_FILE
+            SQLite3::Database.new DB_FILE
+        else
+            create_db()
+        end
+    end
+
+    def create_db()
+        db = SQLite3::Database.new DB_FILE
+        db.execute_batch <<-EOF
+            create table bridges (
+                svn_repos text unique not null,
+                local_wc text not null, 
+                user_id integer not null, 
+                github_url text
+            );
+
+            create table users (
+                svn_username text unique not null,
+                email text null,
+                encpass text not null
+            );
+        EOF
+        db
+    end
+
+    def get_user_record(svn_username)
+        get_db().get_first_row("select * from users where svn_username = ?",
+            svn_username)
+    end
+
+    def insert_user_record(username, password, email=nil)
+        get_db().execute("insert into users values (?, ?, ?)",
+            username, email, encrypt(password))
+    end
+
+    def update_user_record(username, password, email)
+        row = get_user_record(username)
+        return if row.nil? # this should not happen
+        newrow = row.dup
+        if row[1].nil? or row[1] != email
+            newrow[1] = email
+        end
+        oldpw = decrypt(row.last)
+        if (password != oldpw)
+            newrow[2] = encrypt(password)
+        end
+        if newrow != row
+            stmt=<<-"EOF"
+                update users set
+                    email = ?,
+                    encpass = ?
+                where svn_username = ?
+            EOF
+            get_db().execute(stmt, newrow[1], newrow[2], username)
+        end
+    end
+
 
 # FIXME handle it if our app is located somewhere else
 # (settings.root does not seem to work as expected)
@@ -560,6 +623,11 @@ post '/login' do
                 session.delete :redirect_url
                 redirect to redirect_url
             end
+            rec = get_user_record(params[:username])
+            if (rec.nil?)
+                insert_user_record(params[:username],
+                    params[:password])
+            end
         end
         redirect url('/')
     else
@@ -695,6 +763,9 @@ post '/newproject' do
         svndir = params[:svndir]
         rootdir = params[:rootdir]
         conflict = params[:conflict]
+
+        update_user_record(session[:username], session[:password],
+            params[:email])
 
         data = URI.parse("https://api.github.com/repos/#{githubuser}/#{gitprojname}/collaborators").read
         obj = JSON.parse(data)
