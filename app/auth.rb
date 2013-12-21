@@ -32,7 +32,8 @@ def auth(authfile, username, password, return_urls=false)
         line.chomp!
         next if line.strip =~ /^#/
         next if line.strip.empty?
-        next if line.strip =~ /\*/
+        next if line.strip =~ /\*/ # OK for now, but we might want to pay attention to this 
+                                   # at some point
         if line =~ /^\[groups\]/
             group_mode = true
             next
