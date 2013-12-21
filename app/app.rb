@@ -334,8 +334,6 @@ EOF
         for path in paths
             changed_paths.push path.children.to_s
         end
-        puts2 "CHANGED_PATHS = "
-        pp2 changed_paths
 
         ret = {}
         for item in changed_paths
