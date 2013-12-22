@@ -1,3 +1,5 @@
+(This page is under construction. It will eventually move to the Bioconductor web site.)
+
 # Using the Bioconductor Git-SVN bridge
 
 ## Introduction
