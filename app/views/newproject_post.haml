@@ -1,12 +1,21 @@
 %p
     %font{:color => "red"}= msg()
-
--if dupe_repo
-    %p
+-if defined? dupe_repo and dupe_repo
+    %p.error
         Whoops, there is already a bridge for this repository.
--elsif !collab_ok
-    %p
+-elsif defined? collab_ok and !collab_ok
+    %p.error
         It looks like bioc-sync has not been added as a collaborator to your Github repository.
+-elsif defined? svn_repo_error and svn_repo_error
+    %p.error
+        Either this SVN repository doesn't exist, or you don't have read
+        permissions on it.
+-elsif defined? invalid_github_repo and invalid_github_repo
+    %p.error
+        Invalid Github Repository.
+-elsif defined? no_write_privs and no_write_privs
+    %p.error
+        You don't have write permissions on this Subversion directory.
 -else
     %h2
         Git-SVN bridge has been created.

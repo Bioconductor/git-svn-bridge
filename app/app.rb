@@ -15,6 +15,7 @@ require 'tempfile'
 require 'tmpdir'
 require 'open3'
 require 'sqlite3'
+require 'net/http'
 
 def breakpoint()
     binding.pry if ENV['RACK_ENV'].nil?
@@ -784,6 +785,47 @@ post '/newproject' do
         rootdir = params[:rootdir]
         conflict = params[:conflict]
 
+        # sanity checks:
+
+        # verify that svn repos exists and user has read permissions on it
+        svnurl = "#{rootdir}#{svndir}"
+        result = system2(session[:password],
+            "svn log --non-interactive --no-auth-cache --username #{session[:username]} --password $SVNPASS --limit 1 #{svnurl}")
+        if result.first != 0 # repos does not exist or user does not have read privs
+            return haml :newproject_post, :locals => {:svn_repo_error => true}
+        end
+
+        # verify that user has write permission to the SVN repos
+        auth_urls = auth("etc/bioconductor.authz", session[:username], session[:password], true)
+        write_privs = false
+        if auth_urls.is_a? Array
+            lookfor = "#{rootdir}#{svndir}".sub(/^#{SVN_URL}/, "")
+            for auth_url in auth_urls
+                if lookfor =~ /^#{auth_url}/
+                    write_privs = true
+                    break
+                end
+            end
+        else
+            write_privs = false
+        end
+
+        unless write_privs # no write privs to specified svn dir
+            return haml :newproject_post, :locals => {:no_write_privs => true}
+        end
+
+        # verify that github url exists
+
+        url = URI.parse(githuburl)
+        req = Net::HTTP.new(url.host, url.port)
+        req.use_ssl = true
+        res = req.request_head(url.path)
+        unless res.code =~ /^2/ # github repo not found
+            return haml :newproject_post, :locals => {:invalid_github_repo => true}
+        end
+
+        # end sanity checks. 
+        
         update_user_record(session[:username], session[:password],
             params[:email])
         user_id = get_user_id(session[:username])
