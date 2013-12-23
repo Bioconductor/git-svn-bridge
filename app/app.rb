@@ -242,11 +242,12 @@ helpers do
         owner = bridge[:svn_username]
         email = bridge[:email]
         encpass = bridge[:encpass]
+        svn_repos = bridge[:svn_repos]
 
         # start locking here
         wdir = "#{ENV['HOME']}/biocsync/#{local_wc}"
         #lockfile = get_lock_file_name(wdir)
-        lockfile = get_lock_file_name(local_wc)
+        lockfile = get_lock_file_name(svn_repos)
         commit_msg = nil
         File.open(lockfile, File::RDWR|File::CREAT, 0644) {|f|
             f.flock(File::LOCK_EX)
@@ -425,9 +426,9 @@ MESSAGE_END
         end
     end
 
-    # FIXME - wc_dir may match a project in more than one root dir
-    # but this shouldn't fail, it just means we are being overzealous
     def get_lock_file_name(wc_dir)
+        wc_dir.gsub!(/\/$/, "")
+        wc_dir.gsub!(/^#{SVN_URL}/, "")
         lockfile =  "#{Dir.tmpdir}/#{wc_dir.gsub("/", "_").gsub(":", "-")}" 
         puts2 "get_lock_file_name returning #{lockfile}"
         lockfile
@@ -440,6 +441,7 @@ MESSAGE_END
         repos = repo.sub(/^#{SVN_URL}/, "")
         local_wc = bridge[:local_wc]
         owner = bridge[:svn_username]
+        svn_repos = bridge[:svn_repos]
         email = bridge[:email]
         encpass = bridge[:encpass]
         password = decrypt(encpass)
@@ -453,7 +455,7 @@ MESSAGE_END
         end
         wdir = "#{ENV['HOME']}/biocsync/#{local_wc}"
         #lockfile = get_lock_file_name(wdir, "#{SVN_URL}#{SVN_ROOT}#{repos}")
-        lockfile = get_lock_file_name(repos)
+        lockfile = get_lock_file_name(svn_repos)
         File.open(lockfile, File::RDWR|File::CREAT, 0644) {|f|
             f.flock(File::LOCK_EX)
             Dir.chdir(wdir) do
@@ -850,7 +852,7 @@ post '/newproject' do
 
             wdir = "#{ENV['HOME']}/biocsync/#{svndir}"
             #lockfile = get_lock_file_name(wdir, "#{rootdir}#{svndir}")
-            lockfile = get_lock_file_name(svndir)
+            lockfile = get_lock_file_name(svnurl)
             File.open(lockfile, File::RDWR|File::CREAT, 0644) {|f|
                 f.flock(File::LOCK_EX)
                 Dir.chdir("#{ENV['HOME']}/biocsync") do
