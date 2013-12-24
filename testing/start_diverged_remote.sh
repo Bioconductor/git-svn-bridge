@@ -20,6 +20,20 @@ set -vx
 REMOTE="ssh -o StrictHostKeyChecking=no ubuntu@gitsvn.bioconductor.org" 
 
 
+echo "run remote commands"
+
+#$REMOTE "rm -f $APP_DIR/data/monitored_*"
+$REMOTE "echo 'delete from bridges where local_wc = \"$REPO_NAME\";'| sqlite3 ~/app/data/gitsvn.sqlite3"
+
+$REMOTE "rm -rf /home/ubuntu/biocsync/$REPO_NAME"
+
+#$REMOTE "svn up $APP_DIR"
+$REMOTE "cd /home/ubuntu/bioc-git-svn && git pull"
+#$REMOTE "git checkout gitsvn" # needed?
+$REMOTE "touch $APP_DIR/tmp/restart.txt"
+
+
+
 
 echo "delete the github repo"
 
@@ -64,17 +78,6 @@ git push origin master
 
 cd $oldwd
 
-echo "run remote commands"
-
-#$REMOTE "rm -f $APP_DIR/data/monitored_*"
-$REMOTE "echo 'delete from bridges where local_wc = \"$REPO_NAME\";'| sqlite3 ~/app/data/gitsvn.sqlite3"
-
-$REMOTE "rm -rf /home/ubuntu/biocsync/$REPO_NAME"
-
-#$REMOTE "svn up $APP_DIR"
-$REMOTE "cd /home/ubuntu/bioc-git-svn && git pull"
-#$REMOTE "git checkout gitsvn" # needed?
-$REMOTE "touch $APP_DIR/tmp/restart.txt"
 
 echo "delete the svn repo"
 svn delete https://hedgehog.fhcrc.org/bioconductor/trunk/madman/RpacksTesting/$REPO_NAME -m "delete this test directory"

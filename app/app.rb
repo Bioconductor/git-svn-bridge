@@ -234,6 +234,7 @@ helpers do
         url = `git config --get svn-remote.hedgehog.url`.chomp
         puts2("in cache_credentials")
         puts2 "url = #{url}"
+        puts2 "username = #{username}, password = #{password}"
         # fixme do this on production only?
         puts2("removing auth directory...")
         FileUtils.rm_rf "#{ENV['HOME']}/.subversion/auth"
@@ -243,6 +244,9 @@ helpers do
         #Dir.chdir("#{ENV['HOME']}/dont.delete.me") do
             system2(password, "svn log --limit 1 --username #{username} --password $SVNPASS #{url}")
             run("cat ~/.subversion/auth/svn.simple/*")
+            ENV['SVNPASS'] = password
+            x = `svn log --limit 1 --username #{username} --password $SVNPASS #{url}; echo $?`
+            puts2 x
         #end
         sleep 1
     end
