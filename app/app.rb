@@ -396,9 +396,9 @@ EOF
         stderr_str = stderr.gets(nil)
         # FIXME - apparently not all output (stderr?) is shown when there is an error
         puts2 "stdout output:\n#{stdout_str}"
-        puts2 "stderr output:\n#{stderr.gets(nil)}"
+        puts2 "stderr output:\n#{stderr_str}"
         puts2 "---system2() done---"
-        [result, stderr_str, stdout_str]
+        [result, stderr_str, stdout_str] #though it gets returned ok
     end
 
 
