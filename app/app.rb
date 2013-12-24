@@ -388,7 +388,7 @@ EOF
         begin
             stdin, stdout, stderr, thr = Open3.popen3(env, cmd)
         rescue
-            puts "Caught an error running system command"
+            puts2 "Caught an error running system command"
         end
         result = thr.value.exitstatus
         puts2 "result code: #{result}"
