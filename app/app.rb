@@ -262,6 +262,7 @@ helpers do
         owner = bridge[:svn_username]
         email = bridge[:email]
         encpass = bridge[:encpass]
+        password = decrypt(encpass)
         svn_repos = bridge[:svn_repos]
 
         # start locking here
