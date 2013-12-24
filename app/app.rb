@@ -236,10 +236,13 @@ helpers do
         # fixme do this on production only?
         puts2("removing auth directory...")
         FileUtils.rm_rf "#{ENV['HOME']}/.subversion/auth"
+        sleep 1
         puts2 "current directory is #{Dir.getwd}"
+
         #Dir.chdir("#{ENV['HOME']}/dont.delete.me") do
             system2(password, "svn log --limit 1 --username #{username} --password $SVNPASS #{url}")
         #end
+        sleep 1
     end
 
     def handle_git_push(gitpush)
