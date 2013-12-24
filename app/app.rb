@@ -225,9 +225,10 @@ helpers do
         STDERR.puts PP.pp(arg, "")
     end
 
-    # FIXME the call to this (along with whatever is done afterwards) should be done
+    # call to this (along with whatever is done afterwards) should be done
     # inside a lock which blocks EVERYONE. nobody should be allowed to pollute the credentials
     # between the call to cache_credentials and the svn dcommit (or whatever) afterwards
+    # so call this inside a block passed to exclusive_lock().
     def cache_credentials(username, password)
         url = `git config --get svn-remote.hedgehog.url`.chomp
         puts2("in cache_credentials")
@@ -308,10 +309,12 @@ EOF
                 # FIXME customize the message so --add-author-from actually works
                 puts2 "before system"
                 #run("git svn dcommit --add-author-from --username #{owner}")
-                cache_credentials(owner, password)
-###                res = system2(password, "git svn rebase --username #{owner}", true)
-                res = system2(password, "git svn dcommit --no-rebase --add-author-from --username #{owner}",
-                    true)
+                exclusive_lock() do
+                    cache_credentials(owner, password)
+    ###                res = system2(password, "git svn rebase --username #{owner}", true)
+                    res = system2(password, "git svn dcommit --no-rebase --add-author-from --username #{owner}",
+                        true)
+                end
                 puts2 "after system"
                 if (success(res) and !commit_id.nil?)
                     commit_ids_file = "#{APP_ROOT}/data/git_commit_ids.txt"
@@ -442,6 +445,15 @@ MESSAGE_END
         lockfile
     end
 
+    def exclusive_lock()
+        lockfile = "/tmp/gitsvn-exclusive-lock-file"
+        File.open(lockfile, File::RDWR|File::CREAT, 0644) {|f|
+            f.flock(File::LOCK_EX)
+            yield if block_given?
+        }
+    end
+
+
     def handle_svn_commit(repo)
         repos, local_wc, owner, password, email, encpass, commit_msg = nil
         bridge = get_bridge_from_svn_url(repo)
@@ -500,10 +512,13 @@ MESSAGE_END
                 # FIXME this currently returns false but we don't check 
                 # or change behavior accordingly
                 # HEY, that could be important! that could be why repos get hosed?!?
-                res = system2(password, "git svn rebase --username #{owner}", true)
-                if res.last =~ /^Current branch local-hedgehog is up to date\./
-                    puts2 "Nothing to do, exiting...."
-                    return
+                exclusive_lock() do
+                    cache_credentials(owner, password)
+                    res = system2(password, "git svn rebase --username #{owner}", true)
+                    if res.last =~ /^Current branch local-hedgehog is up to date\./
+                        puts2 "Nothing to do, exiting...."
+                        return
+                    end
                 end
                 ##run("git commit -a -m 'meaningless-ish commit here'")
                 puts2("after system...")
@@ -877,11 +892,14 @@ post '/newproject' do
                         res = system2(session[:password],
                             "svn log --non-interactive --limit 1 --username #{session[:username]} --password $SVNPASS #{rootdir}#{svndir}")
                         run("git config --add svn-remote.hedgehog.fetch :refs/remotes/hedgehog")
-                        res = system2(session[:password],
-                            "git svn fetch --username #{session[:username]} hedgehog -r HEAD",
-                            true)
-                        puts2 "res:"
-                        pp2 res
+                        exclusive_lock() do
+                            cache_credentials(session[:username], session[:password])
+                            res = system2(session[:password],
+                                "git svn fetch --username #{session[:username]} hedgehog -r HEAD",
+                                true)
+                            puts2 "res:"
+                            pp2 res
+                        end
                         # see http://stackoverflow.com/questions/19712735/git-svn-cannot-setup-tracking-information-starting-point-is-not-a-branch
                         #run("git checkout -b local-hedgehog -t hedgehog")
                         run("git checkout hedgehog")
@@ -890,7 +908,10 @@ post '/newproject' do
                         run("git config --add branch.local-hedgehog.remote .")
                         run("git config --add branch.local-hedgehog.merge refs/remotes/hedgehog")
                         # need password here?
-                        run("git svn rebase --username #{session[:username]} hedgehog")
+                        exclusive_lock() do
+                            cache_credentials(session[:username], session[:password])
+                            system2(session[:password], "git svn rebase --username #{session[:username]} hedgehog")
+                        end
 
                         branchtomerge, branchtogoto = nil
                         conflict = "svn-wins" if repo_is_empty
@@ -931,10 +952,12 @@ post '/newproject' do
                         if branchtogoto == "master"
                             run("git push origin master")
                         else
-                            cache_credentials(session[:username], session[:password])
-                            res = system2(session[:password],
-                                "git svn dcommit --no-rebase --add-author-from --username #{session[:username]}",
-                                true)
+                            exclusive_lock() do
+                                cache_credentials(session[:username], session[:password])
+                                res = system2(session[:password],
+                                    "git svn dcommit --no-rebase --add-author-from --username #{session[:username]}",
+                                    true)
+                            end
                         end
 
 
@@ -1075,7 +1098,7 @@ post '/merge/:project/:direction' do
                 f.puts commit_id
             end
         else
-            #FIXME run cache_credentials here
+            #FIXME run cache_credentials here (in exclusive_lock)
             # FIXME need to git commit before git svn dcommit?
             run("git svn dcommit") # ???
         end
