@@ -228,6 +228,10 @@ helpers do
     def cache_credentials(username, password)
         url = `git config --get svn-remote.hedgehog.url`.chomp
         puts2("in cache_credentials")
+        # fixme do this on production only?
+        puts2("removing auth directory...")
+        FileUtils.rm_rf "#{ENV['HOME']}/.subversion/auth"
+
         system2(password, "svn log --limit 1 --username #{username} --password $SVNPASS #{url}")
     end
 
@@ -383,6 +387,7 @@ EOF
         puts2 "result code: #{result}"
         stdout_str = stdout.gets(nil)
         stderr_str = stderr.gets(nil)
+        # FIXME - apparently not all output (stderr?) is shown when there is an error
         puts2 "stdout output:\n#{stdout_str}"
         puts2 "stderr output:\n#{stderr.gets(nil)}"
         puts2 "---system2() done---"

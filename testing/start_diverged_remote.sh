@@ -38,7 +38,7 @@ echo "add collaborator"
 curl -i -u "dtenenbaum:$GITHUB_PASSWORD" -d "" -X PUT https://api.github.com/repos/$GITHUB_USERNAME/$REPO_NAME/collaborators/bioc-sync
 
 echo "add hook"
-curl -i -u $GITHUB_USERNAME:$GITHUB_PASSWORD -d "{\"name\":\"web\",\"config\":{\"url\":\"$INSECURE_APP_URL/git-push-hook\", \"ssl:\" 3}}" -X POST https://api.github.com/repos/$GITHUB_USERNAME/$REPO_NAME/hooks
+curl -i -u $GITHUB_USERNAME:$GITHUB_PASSWORD -d "{\"name\":\"web\",\"config\":{\"url\":\"$INSECURE_APP_URL/git-push-hook\"}}" -X POST https://api.github.com/repos/$GITHUB_USERNAME/$REPO_NAME/hooks
 
 
 echo "get local git working copy"
@@ -113,7 +113,7 @@ curl -c cookies.txt -X POST -d "username=$SVN_USERNAME&password=$SVN_PASSWORD&sp
 
 echo "create new bridge"
 
-curl -b cookies.txt  -d "rootdir=https://hedgehog.fhcrc.org/bioconductor/trunk/madman/RpacksTesting/&svndir=$REPO_NAME&githuburl=https://github.com/$GITHUB_USERNAME/$REPO_NAME&email=$EMAIL&conflict=svn-wins" $APP_URL/newproject
+curl -b cookies.txt  -d "rootdir=https://hedgehog.fhcrc.org/bioconductor/trunk/madman/RpacksTesting/&svndir=$REPO_NAME&githuburl=https://github.com/$GITHUB_USERNAME/$REPO_NAME&email=$EMAIL&conflict=git-wins" $APP_URL/newproject
 
 echo
 
