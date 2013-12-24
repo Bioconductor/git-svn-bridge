@@ -229,10 +229,11 @@ helpers do
     # inside a lock which blocks EVERYONE. nobody should be allowed to pollute the credentials
     # between the call to cache_credentials and the svn dcommit (or whatever) afterwards
     # so call this inside a block passed to exclusive_lock().
+    # Also need to ensure this is called from a git working copy.
     def cache_credentials(username, password)
-        #url = `git config --get svn-remote.hedgehog.url`.chomp
-        url = "#{SVN_URL}/trunk/madman/Rpacks/"
+        url = `git config --get svn-remote.hedgehog.url`.chomp
         puts2("in cache_credentials")
+        puts2 "url = #{url}"
         # fixme do this on production only?
         puts2("removing auth directory...")
         FileUtils.rm_rf "#{ENV['HOME']}/.subversion/auth"
@@ -241,6 +242,7 @@ helpers do
 
         #Dir.chdir("#{ENV['HOME']}/dont.delete.me") do
             system2(password, "svn log --limit 1 --username #{username} --password $SVNPASS #{url}")
+            run("cat ~/.subversion/auth/svn.simple/*")
         #end
         sleep 1
     end
