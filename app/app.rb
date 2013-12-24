@@ -225,6 +225,9 @@ helpers do
         STDERR.puts PP.pp(arg, "")
     end
 
+    # FIXME the call to this (along with whatever is done afterwards) should be done
+    # inside a lock which blocks EVERYONE. nobody should be allowed to pollute the credentials
+    # between the call to cache_credentials and the svn dcommit (or whatever) afterwards
     def cache_credentials(username, password)
         url = `git config --get svn-remote.hedgehog.url`.chomp
         puts2("in cache_credentials")
@@ -928,6 +931,7 @@ post '/newproject' do
                         if branchtogoto == "master"
                             run("git push origin master")
                         else
+                            cache_credentials(session[:username], session[:password])
                             res = system2(session[:password],
                                 "git svn dcommit --no-rebase --add-author-from --username #{session[:username]}",
                                 true)
