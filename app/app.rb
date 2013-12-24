@@ -309,6 +309,7 @@ EOF
                 # FIXME customize the message so --add-author-from actually works
                 puts2 "before system"
                 #run("git svn dcommit --add-author-from --username #{owner}")
+                res = nil
                 exclusive_lock() do
                     cache_credentials(owner, password)
     ###                res = system2(password, "git svn rebase --username #{owner}", true)
