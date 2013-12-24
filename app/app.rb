@@ -230,15 +230,16 @@ helpers do
     # between the call to cache_credentials and the svn dcommit (or whatever) afterwards
     # so call this inside a block passed to exclusive_lock().
     def cache_credentials(username, password)
-        Dir.chdir("#{ENV['HOME']}/dont.delete.me") do
-            #url = `git config --get svn-remote.hedgehog.url`.chomp
-            url = "#{SVN_URL}/trunk/madman/Rpacks/"
-            puts2("in cache_credentials")
-            # fixme do this on production only?
-            puts2("removing auth directory...")
-            FileUtils.rm_rf "#{ENV['HOME']}/.subversion/auth"
+        #url = `git config --get svn-remote.hedgehog.url`.chomp
+        url = "#{SVN_URL}/trunk/madman/Rpacks/"
+        puts2("in cache_credentials")
+        # fixme do this on production only?
+        puts2("removing auth directory...")
+        FileUtils.rm_rf "#{ENV['HOME']}/.subversion/auth"
+        puts2 "current directory is #{Dir.getwd}"
+        #Dir.chdir("#{ENV['HOME']}/dont.delete.me") do
             system2(password, "svn log --limit 1 --username #{username} --password $SVNPASS #{url}")
-        end
+        #end
     end
 
     def handle_git_push(gitpush)
