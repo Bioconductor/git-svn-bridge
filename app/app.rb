@@ -231,7 +231,7 @@ helpers do
     # so call this inside a block passed to exclusive_lock().
     def cache_credentials(username, password)
         #url = `git config --get svn-remote.hedgehog.url`.chomp
-        url = SVN_URL
+        url = "#{SVN_URL}/trunk/madman/Rpacks/"
         puts2("in cache_credentials")
         # fixme do this on production only?
         puts2("removing auth directory...")
