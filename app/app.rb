@@ -230,7 +230,7 @@ helpers do
     # between the call to cache_credentials and the svn dcommit (or whatever) afterwards
     # so call this inside a block passed to exclusive_lock().
     def cache_credentials(username, password)
-        Dir.chdir("#{ENV['HOME']/dont.delete.me}") do
+        Dir.chdir("#{ENV['HOME']}/dont.delete.me") do
             #url = `git config --get svn-remote.hedgehog.url`.chomp
             url = "#{SVN_URL}/trunk/madman/Rpacks/"
             puts2("in cache_credentials")
