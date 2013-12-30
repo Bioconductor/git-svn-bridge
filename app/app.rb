@@ -44,7 +44,8 @@ DB_FILE = "#{settings.root}/data/gitsvn.sqlite3"
                 svn_repos text unique not null,
                 local_wc text not null, 
                 user_id integer not null, 
-                github_url text
+                github_url text not null,
+                timestamp text not null
             );
 
             create table users (
@@ -984,14 +985,18 @@ post '/newproject' do
             # here.
 
             svn_repos = ""
+            t = Time.now
+            timestamp = t.strftime "%Y-%m-%d %H:%M:%S.%L"            
             stmt=<<-EOF
                 insert into bridges 
                     (
                         svn_repos,
                         local_wc,
                         user_id,
-                        github_url
+                        github_url,
+                        timestamp
                     ) values (
+                        ?,
                         ?,
                         ?,
                         ?,
@@ -999,7 +1004,7 @@ post '/newproject' do
                     );
             EOF
             get_db().execute(stmt, "#{rootdir}#{svndir}",
-                svndir, user_id, params[:githuburl].rts)
+                svndir, user_id, params[:githuburl].rts, timestamp)
 
             # Dir.chdir("#{ENV['HOME']}/biocsync/#{gitprojname}") do
             #     # we should be on master, but...
