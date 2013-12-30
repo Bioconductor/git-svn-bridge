@@ -1114,3 +1114,7 @@ post '/merge/:project/:direction' do
     redirect url('/')    
 end
 
+get '/list_bridges' do
+    items = [[1,2,3,4], [5,6,7,8]]
+    haml :list_bridges, :locals => {:items => items}
+end
