@@ -236,8 +236,8 @@ helpers do
         puts2("in cache_credentials")
         # fixme do this on production only?
         puts2("removing auth directory...")
-        FileUtils.rm_rf "#{ENV['HOME']}/.subversion/auth"
-        system2(password, "svn log --limit 1 --username #{username} --password $SVNPASS #{url}")
+        FileUtils.rm_rf "#{ENV['HOME']}/.subversion/auth/svn.simple"
+        system2(password, "svn log --non-interactive --limit 1 --username #{username} --password $SVNPASS #{url}")
     end
 
     def handle_git_push(gitpush)
