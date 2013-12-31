@@ -130,7 +130,6 @@ DB_FILE = "#{settings.root}/data/gitsvn.sqlite3"
     end
 
     def get_user_id(username)
-        puts2 "USERNAME = #{username}"
         get_db().get_first_row("select rowid from users where svn_username = ?",
             username).first
     end
@@ -1115,6 +1114,57 @@ post '/merge/:project/:direction' do
 end
 
 get '/list_bridges' do
-    items = [[1,2,3,4], [5,6,7,8]]
-    haml :list_bridges, :locals => {:items => items}
+    usessl!
+    query=<<-"EOT"
+        select svn_repos, github_url, svn_username,
+            timestamp from bridges, users
+            where users.rowid = bridges.user_id
+            order by date(timestamp) desc;
+    EOT
+    result = get_db().execute(query)
+    result.each_with_index do |row, i|
+        s = result[i][0]
+        result[i][0] =  %Q(<a href="#{s}">#{s.sub(SVN_URL, "")}</a>) 
+        g = result[i][1]
+        result[i][1] = %Q(<a href="#{g}">#{g}</a>)
+        t = result[i][3].to_s
+        d = DateTime.strptime(t, "%Y-%m-%d %H:%M:%S.%L"  )
+        result[i][3] = d.strftime "%Y-%m-%d"
+    end
+    haml :list_bridges, :locals => {:items => result}
+end
+
+get '/my_bridges' do
+    protected!
+    usessl!
+    query=<<-"EOT"
+        select svn_repos, github_url, 
+            timestamp, bridges.rowid from bridges, users
+            where users.rowid = bridges.user_id
+            and bridges.user_id = ?
+            order by date(timestamp) desc;
+    EOT
+    user_id = get_user_id(session[:username])
+    result = get_db().execute(query, user_id)
+    result.each_with_index do |row, i|
+        s = result[i][0]
+        result[i][0] =  %Q(<a href="#{s}">#{s.sub(SVN_URL, "")}</a>) 
+        g = result[i][1]
+        result[i][1] = %Q(<a href="#{g}">#{g}</a>)
+        t = result[i][2].to_s
+        d = DateTime.strptime(t, "%Y-%m-%d %H:%M:%S.%L"  )
+        result[i][2] = d.strftime "%Y-%m-%d"
+        rowid = result[i][3]
+        result[i][3] = %(<a class="confirm" href="/delete_bridge?bridge_id=#{rowid}">Delete</a>)
+    end
+    haml :my_bridges, :locals => {:items => result}
+
+end
+
+get '/delete_bridge' do
+    protected!
+    usessl!
+    query = "delete from bridges where rowid = ?"
+    get_db.execute(query, params[:bridge_id])
+    haml :delete_bridge
 end

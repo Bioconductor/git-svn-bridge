@@ -1,15 +1,19 @@
 - if items.nil? or items.empty?
     %p
-        There are no bridges.
+        You have no bridges.
 - else
     %p
-        All bridges:
+        Your bridges:
     %script{charset: "utf-8", src: "/js/jquery-1.10.1.min.js", type: "text/javascript"}
     %script{charset: "utf8", src: "http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/jquery.dataTables.min.js", type: "text/javascript"}
     %link{href: "http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/css/jquery.dataTables.css", rel: "stylesheet", type: "text/css"}/
     :javascript
         $(document).ready(function(){
             $('#bridges').dataTable();
+            $('.confirm').click(function(){
+                var c=confirm("Are you sure?");
+                return(c);
+            });
         });
     %table#bridges.display
         %thead
@@ -18,11 +22,11 @@
                     SVN Repos
                 %th
                     Github Repos
-                %th
-                    Owner
                 -# FIXME - will datatables sort work properly with dates?
                 %th
                     Created
+                %th
+                    Delete
         %tbody
             - for row in items
                 %tr
