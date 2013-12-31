@@ -22,7 +22,8 @@ the Subversion repository. If you already have a Github repository that has
 files in it, that will work too.
 
 Let's assume that your package is called `MyPackage`, your Subversion
-username is j.user, and your email address is `juser@contributor.org`.
+username is j.user, your Github username is `username`, and your email 
+address is `juser@contributor.org`.
 
 Your package will be in Subversion at the URL
 
@@ -31,6 +32,7 @@ Your package will be in Subversion at the URL
 That's the URL for the devel version of the package. You can also create a bridge to the release version of a package (see the
 [FAQ](#bridge-to-release-version)).
 
+<a name="step1"></a>
 ## Step 1: Configure your Github Repository
 
 If you haven't already created a Github repository, please
@@ -82,13 +84,26 @@ In the bridge web app, click
 Log in with your SVN Username, SVN password and email address.
 See the [FAQ](#svn-password) if you don't remember either of these.
 
+Once you've logged in, click the 
+[Create New Github-SVN mapping](https://gitsvn.bioconductor.org/newproject)
+link.
+
+Choose the *root* directory path. If you are creating a bridge
+for a software package in Bioconductor's `devel` branch, use
+the default value of this dropdown 
+(`https://hedgehog.fhcrc.org/bioconductor/trunk/madman/Rpacks/`).
+
+For *Directory Name*, choose the name of your package, e.g.
+`MyPackage`.
+
+In the next box, enter the URL for the Github repository you created
+in [step 1](#step1), e.g.
+
+    https://github.com/username/MyPackage
 
 
 
 
-
-
-## Introduction
 
 ## FAQ
 
