@@ -15,14 +15,16 @@ social coding features of Github such as issue tracking and pull requests.
 ## How to create a bridge
 
 In order to create a bridge, you must be the maintainer of a Bioconductor 
-package, with read/write access to its Subversion repository.
+package, with read/write access to its directory in the
+Bioconductor
+[Subversion repository](http://localhost:3000/developers/how-to/source-control/).
 
 You will also need to create a Github repository which will mirror
 the Subversion repository. If you already have a Github repository that has 
 files in it, that will work too.
 
 Let's assume that your package is called `MyPackage`, your Subversion
-username is j.user, your Github username is `username`, and your email 
+username is `j.user`, your Github username is `username`, and your email 
 address is `juser@contributor.org`.
 
 Your package will be in Subversion at the URL
@@ -101,9 +103,51 @@ in [step 1](#step1), e.g.
 
     https://github.com/username/MyPackage
 
+Decide how you want to handle initial merge conflicts. 
+If you are starting with a **completely** empty Github repository
+(which does not even have a README file in it), then it does not matter
+how you answer this question.
 
+If both your Subversion and your Github repositories have contents, 
+decide **carefully** how you want to proceed:
 
+* Choosing "SVN wins unconditionally" means that the contents of
+  your SVN repository will completely overwrite the contents of
+  your github repository. You will not have the opportunity
+  to manually merge conflicting files. You will still have access
+  to files that were changed, via git's commit history.
 
+* Choosing "Git wins unconditionally" means the opposite--the contents
+  of your Github repository will completely overwrite the contents
+  of your SVN repository, and this will then **propagate to the
+  Bioconductor build system**. You will have access to files
+  that were changed, but only via svn.
+
+You now need to check two boxes: the first confirms that you have 
+configured your Github repository as described in [Step 1](#step1),
+the second that you will respond to pull requests and issues
+filed in your Github repository (see the [FAQ](#responsibilities)).
+
+You may now click the **Create New Project** button.
+
+You should see a message that your bridge was created successfully.
+You can click [My Bridges](https://gitsvn.bioconductor.org/my_bridges)
+to confirm this.
+
+## Step 3: What now?
+
+Any commits made to your package in Subversion will be mirrored
+in the *master* branch of your Github repository.
+
+Any pushes to the *master* branch of your Github repository will
+automatically be mirrored in Subversion, and will propagate
+to the [Bioconductor Build System](http://bioconductor.org/checkResults/).
+
+The Git-SVN bridge only affects the *master* branch of your Github
+repository. It will ignore changes made in any other branch, even
+if those branches are pushed to Github.
+So you are free to experiment and even break your package
+as long as you don't do it in the *master* branch.
 
 ## FAQ
 
@@ -123,11 +167,14 @@ in [step 1](#step1), e.g.
 [[Back To Top]](#top)
 
 <a name="org-repos"></a>
-#### Working with a Github Organization repository
+##### Working with a Github Organization repository
 
 [[Back To Top]](#top)
 
+<a name="responsibilities"></a>
+##### What are my responsibilities when I create a bridge?
 
+[[Back To Top]](#top)
 
 
 ##### I don't want to use the bridge, I want to keep my repositories in sync manually.
