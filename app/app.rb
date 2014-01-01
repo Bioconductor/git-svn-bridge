@@ -1164,6 +1164,10 @@ end
 get '/delete_bridge' do
     protected!
     usessl!
+    query = "select local_wc from bridges where rowid = ?"
+    local_wc = get_db().get_first_row(query, params[:bridge_id]).first
+    dir_to_delete = "#{ENV['HOME']}/biocsync/#{local_wc}"
+    res = FileUtils.rm_rf "#{ENV['HOME']}/biocsync/#{local_wc}"
     query = "delete from bridges where rowid = ?"
     get_db.execute(query, params[:bridge_id])
     haml :delete_bridge
