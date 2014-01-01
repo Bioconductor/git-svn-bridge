@@ -151,6 +151,100 @@ as long as you don't do it in the *master* branch.
 
 ## FAQ
 
+<a name="history"></a>
+##### Can I see old commit history?
+
+After creating a bridge, you can't see old svn commit information
+from prior to bridge creation if you're using git. (You can still see it 
+with svn).
+
+Conversely, in svn, you can't see Git commit messages from
+before the bridge was created. You can still see them in git.
+
+Once the bridge is created, you'll see subsequent commit messages
+from both git and svn, whether you are using git or svn.
+
+This may change in the future.
+
+[[Back To Top]](#top)
+
+<a name="commit-messages"></a>
+##### How do I know whether a commit came from Git or SVN?
+
+If a commit was made in svn, it will show up in the output
+of `git log` as something like this:
+
+    commit f0c494108cc854a7a7a267c6a40ea8a3bdef2209
+    Author: j.user <j.user@bc3139a8-67e5-0310-9ffc-ced21a209358>
+    Date:   Tue Dec 24 19:12:36 2013 +0000
+
+        This is my commit message.
+        
+        git-svn-id: https://hedgehog.fhcrc.org/bioconductor/trunk/madman/Rpacks/MyPackage0@85102 bc3139a8-67e5-0310-9ffc-ced21a209358
+
+The `git-svn-id` tells you that this commit originated in svn,
+and the number after the `@` is the SVN revision number.
+
+If you are working in Subversion, a commit made in git will look 
+something like this when you run `svn log -v`:
+
+    ------------------------------------------------------------------------
+    r85104 | j.user | 2013-12-24 11:13:59 -0800 (Tue, 24 Dec 2013) | 12 lines
+    Changed paths:
+       M /trunk/madman/Rpacks/MyPackage/DESCRIPTION
+
+    Commit made by the git-svn bridge at https://gitsvn.bioconductor.org.
+    Consists of 1 commit(s).
+
+    Commit information:
+
+        Commit id: 6132d20eb3615afdeafcb8a086e952e4b9f8977f
+        Commit message:
+        Bumped the version number
+        Committed by Jill User <juser at contributor.org>
+        Commit date: 2013-12-24T11:13:49-08:00
+
+Note that the svn user who did the commit will always be
+the user you were logged in as when you created the bridge
+in [Step 2](#step2). 
+
+The name of the Git user (denoted by the `Committed by` line)
+might vary, if you have granted other users "push" access to
+your repository, or if you accept a pull request.
+
+
+
+[[Back To Top]](#top)
+
+
+<a name="howto-list-bridges"></a>
+##### How do I know what Git-SVN bridges exist?
+
+Look at the 
+[list of bridges](https://gitsvn.bioconductor.org/list_bridges)
+maintained by the web app.
+
+[[Back To Top]](#top)
+
+##### How do I advertise my bridge?
+
+Add the Github URL of your repository to the URL: field 
+in the DESCRIPTION file of your package. You can also 
+mention your bridge on the bioc-devel 
+[mailing list](http://bioconductor.org/help/mailing-list/).
+
+[[Back To Top]](#top)
+
+##### I want to contribute to a package using Github, but there is no bridge for it.
+
+You can request that the maintainer of the package create a bridge,
+but if they do not wish to do so, you'll need to contribute
+via other means. If a maintainer will not review pull requests and issues
+filed via Github, then it is pointless to file them.
+
+
+
+
 <a name="svn-password"></a>
 ##### I don't know my Subversion username and/or password. What do I do?
 
