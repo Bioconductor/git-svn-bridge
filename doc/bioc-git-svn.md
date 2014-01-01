@@ -217,6 +217,18 @@ your repository, or if you accept a pull request.
 [[Back To Top]](#top)
 
 
+<a name="other-users-push"></a>
+##### Other users have push access to my repository. Will it work for them?
+
+Yes. Be sure this is what you want. If you grant another user push access to your repository, they can push to any branch, including master, which will then propagate to the Bioconductor build system. If you don't want the user to have that level of access, then don't grant them push access. You can accept pull requests from them instead.
+
+The Git-SVN bridge will correctly record the name of the git user
+who made the commits (see above [FAQ](#commit-messages)).
+
+
+[[Back To Top]](#top)
+
+
 <a name="howto-list-bridges"></a>
 ##### How do I know what Git-SVN bridges exist?
 
@@ -243,6 +255,14 @@ via other means. If a maintainer will not review pull requests and issues
 filed via Github, then it is pointless to file them.
 
 
+<a name="responsibilities"></a>
+##### What are my responsibilities when I create a bridge?
+
+As implied by the above question, package maintainers must
+respond to pull requests and issues filed in their Github 
+
+[[Back To Top]](#top)
+
 
 
 <a name="svn-password"></a>
@@ -265,10 +285,6 @@ filed via Github, then it is pointless to file them.
 
 [[Back To Top]](#top)
 
-<a name="responsibilities"></a>
-##### What are my responsibilities when I create a bridge?
-
-[[Back To Top]](#top)
 
 
 ##### I don't want to use the bridge, I want to keep my repositories in sync manually.
