@@ -12,7 +12,7 @@
             %a{:href => "/"} Home
           %li.active= loginlink()
           %li.active
-            %a{:href => DOC_URL} Documentation
+            %a{:href => DOC_URL, target => "_blank"} Documentation
           %li.active
             %a{:href => "/list_bridges"} List All Bridges
           -if logged_in?
