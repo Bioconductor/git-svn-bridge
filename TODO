@@ -1,6 +1,5 @@
 BUG - local_wc directory is not named unambigously, so if there is  a bridge for release and 
 devel versions of 'pkg' they will try to use the same local working copy name. FIXFIXFIX (fixed - verify)
-only allow bridges to be created to the specified roots (if someone uses curl to post)
 X Lock critical sections (git/svn commit/push hook response) so only one process can run them at a given time
 (partial) More verbose page after you make a bridge that describes next steps
 Testing - ensure history prob doesn't happen again

@@ -29,6 +29,14 @@ set :session_secret, IO.readlines("data/session_secret.txt").first
 
 DB_FILE = "#{settings.root}/data/gitsvn.sqlite3"
 
+SVN_ROOTS=%w(https://hedgehog.fhcrc.org/bioconductor/trunk/madman/Rpacks/
+https://hedgehog.fhcrc.org/bioconductor/branches/RELEASE_2_13/madman/Rpacks/
+https://hedgehog.fhcrc.org/bioconductor/trunk/madman/workflows/
+https://hedgehog.fhcrc.org/bioconductor/branches/RELEASE_2_13/madman/workflows/
+https://hedgehog.fhcrc.org/bioconductor/trunk/madman/RpacksTesting/
+https://hedgehog.fhcrc.org/bioconductor/branches/RELEASE_2_13/madman/RpacksTesting/)
+
+
     def get_db()
         if File.exists? DB_FILE
             SQLite3::Database.new DB_FILE
@@ -817,6 +825,11 @@ post '/newproject' do
         conflict = params[:conflict]
 
         # sanity checks:
+
+
+        unless SVN_ROOTS.include? rootdir
+            return haml :newproject_post, :locals => {:invalid_svn_root => true}
+        end
 
         # verify that svn repos exists and user has read permissions on it
         svnurl = "#{rootdir}#{svndir}"

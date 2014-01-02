@@ -8,13 +8,8 @@
         %span#rootdir_error.error
         %label(for="rootdir")Root Directory:
         %select{name: "rootdir"}
-          -# Change this to 'production' directories when ready:
-          %option https://hedgehog.fhcrc.org/bioconductor/trunk/madman/Rpacks/
-          %option https://hedgehog.fhcrc.org/bioconductor/branches/RELEASE_2_13/madman/Rpacks/
-          %option https://hedgehog.fhcrc.org/bioconductor/trunk/madman/workflows/
-          %option https://hedgehog.fhcrc.org/bioconductor/branches/RELEASE_2_13/madman/workflows/
-          %option https://hedgehog.fhcrc.org/bioconductor/trunk/madman/RpacksTesting/
-          %option https://hedgehog.fhcrc.org/bioconductor/branches/RELEASE_2_13/madman/RpacksTesting/
+          - for root in SVN_ROOTS
+            %option= root
     %tr
       %td
         %span#svndir_error.error

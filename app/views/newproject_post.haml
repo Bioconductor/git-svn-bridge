@@ -3,6 +3,9 @@
 -if defined? dupe_repo and dupe_repo
     %p.error
         Whoops, there is already a bridge for this repository.
+-elsif defined? invalid_svn_root and invalid_svn_root
+    %p.error
+        Invalid SVN root directory.
 -elsif defined? collab_ok and !collab_ok
     %p.error
         It looks like bioc-sync has not been added as a collaborator to your Github repository.
