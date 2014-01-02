@@ -134,6 +134,10 @@ DB_FILE = "#{settings.root}/data/gitsvn.sqlite3"
             username).first
     end
 
+    def get_wc_dirname(svn_url)
+        svn_url.sub(SVN_URL, "").gsub("/", "_").sub(/^_/, "")
+    end
+
 # FIXME handle it if our app is located somewhere else
 # (settings.root does not seem to work as expected)
 HOSTNAME=`hostname`
@@ -816,6 +820,7 @@ post '/newproject' do
 
         # verify that svn repos exists and user has read permissions on it
         svnurl = "#{rootdir}#{svndir}"
+        local_wc = get_wc_dirname(svnurl)
         result = system2(session[:password],
             "svn log --non-interactive --no-auth-cache --username #{session[:username]} --password $SVNPASS --limit 1 #{svnurl}")
         if result.first != 0 # repos does not exist or user does not have read privs
@@ -881,11 +886,11 @@ post '/newproject' do
             File.open(lockfile, File::RDWR|File::CREAT, 0644) {|f|
                 f.flock(File::LOCK_EX)
                 Dir.chdir("#{ENV['HOME']}/biocsync") do
-                    FileUtils.rm_rf gitprojname # just in case
-                    result = run("git clone #{git_ssh_url}")
+                    FileUtils.rm_rf local_wc # just in case
+                    result = run("git clone #{git_ssh_url} #{local_wc}")
                     #res = system2(session[:password],
                     #    "svn export --non-interactive --username #{session[:username]} --password $SVNPASS #{SVN_URL}#{SVN_ROOT}/#{svndir}")
-                    Dir.chdir(gitprojname) do
+                    Dir.chdir(local_wc) do
                         repo_is_empty = `git branch`.empty?
                         res = system2(session[:password],
                             "svn log --non-interactive --limit 1 --username #{session[:username]} --password $SVNPASS #{rootdir}#{svndir}")
@@ -1005,16 +1010,6 @@ post '/newproject' do
             get_db().execute(stmt, "#{rootdir}#{svndir}",
                 svndir, user_id, params[:githuburl].rts, timestamp)
 
-            # Dir.chdir("#{ENV['HOME']}/biocsync/#{gitprojname}") do
-            #     # we should be on master, but...
-            #     run("git checkout master")
-            #     if (File.exists? "DESCRIPTION")
-            #         add_url_to_description(githuburl, "DESCRIPTION")
-            #         run("git add DESCRIPTION")
-            #         run %Q(git commit -m "automatically add github URL to DESCRIPTION")
-            #         run("git push origin master")
-            #     end
-            # end
             
             haml :newproject_post, :locals => {:dupe_repo => false, :collab_ok => true}
         end 
@@ -1031,87 +1026,6 @@ get '/test/:name' do
     end
 end
 
-# FIXME - um, what about binary diffs?
-# need to test
-get '/merge/:project/:direction' do
-    usessl!
-    unless logged_in?
-        session[:redirect_url] = request.path
-        redirect to('/login')
-    end
-    if HOSTNAME =~ /^dhcp/ # test code
-        return erb :merge, :locals => {:files => \
-            [{:name=>"file1",
-            :git_contents=>Base64.encode64("file1 git contents").chomp,
-            :svn_contents=>Base64.encode64("file1 svn contents").chomp},
-            {:name=>"file2",
-            :git_contents=>Base64.encode64("file2 git contents").chomp,
-            :svn_contents=>Base64.encode64("file2 svn contents").chomp}]}
-    end
-    project = params[:project]
-    direction = params[:direction]
-    files = []
-    Dir.chdir("#{ENV['HOME']}/biocsync/#{project}") do
-        if direction == "svn2git"
-            result = run("git checkout local-hedgehog")
-            files = []
-            for line in result.last.split("\n")
-                if line =~ /: needs merge/
-                    hsh = {}
-                    file = line.split(": needs merge").first
-                    file1_results = run("git show :2:#{file}")
-                    file2_results = run("git show :3:#{file}")
-                    hsh[:name] = file
-                    hsh[:git_contents] = Base64.encode64(file2_results.last).chomp
-                    hsh[:svn_contents] = Base64.encode64(file1_results.last).chomp
-                    files.push hsh
-                end
-            end
-        elsif direction == "git2svn"
-        end
-    end
-    erb :merge, :locals => {:files => files}
-end
-
-post '/merge/:project/:direction' do
-    usessl!
-    # fixme - what are the implications of ensuring the user is logged in here?
-    project = params[:project]
-    direction = params[:direction]
-    obj = JSON.parse(params[:results])
-    Dir.chdir("#{ENV['HOME']}/biocsync/#{project}") do
-        if direction == "svn2git"
-            run("git checkout local-hedgehog")
-        else
-            run("git checkout master")
-        end
-        obj["names"].each_with_index do |name, i|
-            f = File.open(name, "w")
-            f.write Base64.decode64(obj["results"][i])
-            f.close
-            run("git add #{name}")
-        end
-        # FIXME better commit message (entered in editor?)
-        run("git commit -m 'differences resolved in gitsvn.bioconductor.org editor'")
-        commit_id = `git rev-parse HEAD`.chomp
-        if (direction == "svn2git")
-            result = run("git push origin master")
-            if (success(result))
-                commit_ids_file = "#{APP_ROOT}/data/git_commit_ids.txt"
-                FileUtils.touch(commit_ids_file)
-                f = File.open(commit_ids_file, "a")
-                puts2("trying to break circle on #{commit_id}")
-                f.puts commit_id
-            end
-        else
-            #FIXME run cache_credentials here (in exclusive_lock)
-            # FIXME need to git commit before git svn dcommit?
-            run("git svn dcommit") # ???
-        end
-    end
-    session[:message] = "Changes merged successfully."
-    redirect url('/')    
-end
 
 get '/list_bridges' do
     usessl!
