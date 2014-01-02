@@ -893,8 +893,6 @@ post '/newproject' do
             # fixme - make sure both repos are valid
             git_ssh_url = "git@github.com:#{githubuser}/#{gitprojname}.git"
 
-            wdir = "#{ENV['HOME']}/biocsync/#{svndir}"
-            #lockfile = get_lock_file_name(wdir, "#{rootdir}#{svndir}")
             lockfile = get_lock_file_name(svnurl)
             File.open(lockfile, File::RDWR|File::CREAT, 0644) {|f|
                 f.flock(File::LOCK_EX)
@@ -1021,7 +1019,7 @@ post '/newproject' do
                     );
             EOF
             get_db().execute(stmt, "#{rootdir}#{svndir}",
-                svndir, user_id, params[:githuburl].rts, timestamp)
+                local_wc, user_id, params[:githuburl].rts, timestamp)
 
             
             haml :newproject_post, :locals => {:dupe_repo => false, :collab_ok => true}
