@@ -277,15 +277,17 @@ One of the following steps should work:
   should contain the text "Information about your svn account". 
 * Go to your `~/.subversion/auth/svn.simple` directory. There should be
   one or more files whose names are long hexadecimal numbers. Use `grep`
-  to find your username in these files. If you don't know your username,
+  to find out which file contains your username. If you don't know your 
+  username,
   it's usually your first initial, a dot, and your last name (all 
-  lowercase). So Jill User would be j.user. Example:
+  lowercase). So Jill User would be `j.user`. Example:
 
         $ grep -l j.user *
         81a52e36a28dfd7750bd975f30c7998b
 
   This indicates that your password can be found in the file called
-  `81a52e36a28dfd7750bd975f30c7998b`. Examine that file and you should see something like:
+  `81a52e36a28dfd7750bd975f30c7998b`. Examine that file and you should see 
+  something like:
 
         password
         V 8
@@ -300,17 +302,41 @@ One of the following steps should work:
   a day or two for the request to be processed.
 
 
-
-
 [[Back To Top]](#top)
 
 <a name="create-github"></a>
 ##### How do I create a Github repository?
 
+* Go to [https://github.com/](https://github.com/).
+* Create a Github account if you don't already have one.
+* Click the 
+  <a href="https://github.com/new"><img src="newrepo.jpg"></a> icon
+  next to your login name at the top right corner of the browser window.
+* If you are a member of one or more Github organizations, 
+  decide if you want this repository to belong to you 
+  as an individual or to one of your organizations. Do this by changing
+  the value of the `Owner` dropdown.
+* Choose a name for your repository. If possible, it should match the
+  name of your package (though it may differ if you have bridges
+  for the release and devel version of your package, see
+  [the next question](#bridge-to-release-version)).
+* You can disregard the rest of the fields and click `Create Repository`.
+
+
 [[Back To Top]](#top)
 
 <a name="bridge-to-release-version"></a>
 ##### How do I create a bridge to the release version of my package?
+
+Follow the same instructions as given in [Step 1](#step1), but
+give your Github repository a name indicating that it's the release
+version, i.e. `MyPackage-release`.
+
+In [Step 2](#step2), be sure you choose the release directory
+from the `Root Directory` dropdown when creating the bridge.
+For the current release, that would be:
+
+    https://hedgehog.fhcrc.org/bioconductor/branches/RELEASE_<%=config[:release_version].sub(".", "_")%>/madman/Rpacks
 
 [[Back To Top]](#top)
 
