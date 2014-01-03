@@ -1,4 +1,5 @@
-BUG - local_wc directory is not named unambigously, so if there is  a bridge for release and 
+Don't hardcode release number in SVN_ROOTS.
+X BUG - local_wc directory is not named unambigously, so if there is  a bridge for release and 
 devel versions of 'pkg' they will try to use the same local working copy name. FIXFIXFIX (fixed - verify)
 X Lock critical sections (git/svn commit/push hook response) so only one process can run them at a given time
 (partial) More verbose page after you make a bridge that describes next steps

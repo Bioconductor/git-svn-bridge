@@ -29,6 +29,9 @@ set :session_secret, IO.readlines("data/session_secret.txt").first
 
 DB_FILE = "#{settings.root}/data/gitsvn.sqlite3"
 
+# FIXME - don't hardcode the release version here but get it from
+# the config file for the BioC site. Otherwise, remember 
+# to change it with each new release.
 SVN_ROOTS=%w(https://hedgehog.fhcrc.org/bioconductor/trunk/madman/Rpacks/
 https://hedgehog.fhcrc.org/bioconductor/branches/RELEASE_2_13/madman/Rpacks/
 https://hedgehog.fhcrc.org/bioconductor/trunk/madman/workflows/

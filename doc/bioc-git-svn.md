@@ -38,6 +38,8 @@ That's the URL for the devel version of the package. You can also create a bridg
 <a name="step1"></a>
 ## Step 1: Configure your Github Repository
 
+### Step 1a:
+
 If you haven't already created a Github repository, please
 [do so now](#create-github). Open the repository page in a web browser;
 it will have a URL like:
@@ -338,10 +340,43 @@ For the current release, that would be:
 
     https://hedgehog.fhcrc.org/bioconductor/branches/RELEASE_<%=config[:release_version].sub(".", "_")%>/madman/Rpacks
 
+Your release bridge is completely separate from your devel bridge.
+The Github repositories in each are separate from each other, not
+branches of each other. 
+
+Shortly before each Bioconductor release (twice a year, usually
+in Spring and Fall), we will disable commits to the release branch,
+and your release bridge will stop working. You can delete it.
+
+When the new release branch is created, you can create a new 
+release bridge pointing to it.
+
+
 [[Back To Top]](#top)
 
 <a name="org-repos"></a>
 ##### Working with a Github Organization repository
+
+If you're working with a Github Organization repository, the steps
+to set up a collaborator are a little bit different:
+
+* You need to be an administrator of the Github organization.
+* Go to the Organization's main page. If the organization is called 
+  `myorg`, you'd go to
+
+        https://github.com/organizations/myorg
+
+* Click on "Teams", at the right-hand side of the top navigation bar.
+* Click on "New Team." You may be prompted to enter your Github password.
+* Choose a descriptive name for the team, such as `bioc-collab`.
+* Grant the "Push & Pull" privileges
+* In the Members box, add the user `bioc-sync` and click `Add`.
+* In the Repositories box, type the organization name, a slash,
+  and the repository name, for example: `myorg/MyPackage`, and
+  click `Add`.
+* Now click `Save Team`.
+
+
 
 [[Back To Top]](#top)
 
@@ -350,7 +385,8 @@ For the current release, that would be:
 ##### I don't want to use the bridge, I want to keep my repositories in sync manually.
 
 You can do that by following
-[these guidelines](https://github.com/Bioconductor/BiocGithubHelp/wiki/Managing-your-Bioc-code-on-hedgehog-and-github).
+[these guidelines](https://github.com/Bioconductor/BiocGithubHelp/wiki/Managing-your-Bioc-code-on-hedgehog-and-github). Thanks to Laurent Gatto for providing these instructions
+which are also the inspiration for the Git-SVN bridge.
 
 [[Back To Top]](#top)
 
