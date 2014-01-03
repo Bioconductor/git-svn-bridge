@@ -1048,7 +1048,7 @@ get '/list_bridges' do
         select svn_repos, github_url, svn_username,
             timestamp from bridges, users
             where users.rowid = bridges.user_id
-            order by date(timestamp) desc;
+            order by datetime(timestamp) desc;
     EOT
     result = get_db().execute(query)
     result.each_with_index do |row, i|
@@ -1071,7 +1071,7 @@ get '/my_bridges' do
             timestamp, bridges.rowid from bridges, users
             where users.rowid = bridges.user_id
             and bridges.user_id = ?
-            order by date(timestamp) desc;
+            order by datetime(timestamp) desc;
     EOT
     user_id = get_user_id(session[:username])
     result = get_db().execute(query, user_id)
