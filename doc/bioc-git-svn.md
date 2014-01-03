@@ -38,7 +38,7 @@ That's the URL for the devel version of the package. You can also create a bridg
 <a name="step1"></a>
 ## Step 1: Configure your Github Repository
 
-### Step 1a:
+### Step 1a: Create Github Repository
 
 If you haven't already created a Github repository, please
 [do so now](#create-github). Open the repository page in a web browser;
@@ -48,6 +48,9 @@ it will have a URL like:
 
 If you are working with a repository that is part of an organization,
 see the [FAQ](#org-repos).
+
+
+### Step 1b: Add Collaborator
 
 Click on the "Settings" link in the right-side nav bar.
 It will look like this:
@@ -62,7 +65,8 @@ Then in the "Add a Friend" box, type
 
 Then click the **Add** button. This allows the Git-SVN bridge to make changes to your github repository in response to Subversion commits.
 
-###
+<a name="step-1c"></a>
+### Step 1c: Add Push Hook
 
 Again in the nav bar at left, click on "Service Hooks".
 Then click on "WebHook URLs". (there may be a number next to the link).
@@ -378,6 +382,8 @@ to set up a collaborator are a little bit different:
   click `Add`.
 * Now click `Save Team`.
 
+Now you can go back to the repository "Settings" page and 
+[continue](#step-1c) configuring repository settings.
 
 
 [[Back To Top]](#top)
