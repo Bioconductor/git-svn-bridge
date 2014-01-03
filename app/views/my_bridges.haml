@@ -9,7 +9,9 @@
     %link{href: "https://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/css/jquery.dataTables.css", rel: "stylesheet", type: "text/css"}/
     :javascript
         $(document).ready(function(){
-            $('#bridges').dataTable();
+            $('#bridges').dataTable({
+                "aaSorting": [[ 2, "desc" ]]
+            });
             $('.confirm').click(function(){
                 var c=confirm("Are you sure?");
                 return(c);
