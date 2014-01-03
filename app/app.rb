@@ -661,12 +661,12 @@ end
 
 post '/login' do
     usessl!
-    f = File.open("etc/specialpass")
-    specialpass = f.readlines.first.chomp
-    if params[:specialpass] != specialpass
-        session[:message] = "Incorrect special password."
-        redirect url('/')
-    end
+    # f = File.open("etc/specialpass")
+    # specialpass = f.readlines.first.chomp
+    # if params[:specialpass] != specialpass
+    #     session[:message] = "Incorrect special password."
+    #     redirect url('/')
+    # end
     if auth("etc/bioconductor.authz", params['username'], params['password'])
         urls = auth("etc/bioconductor.authz",
             params[:username],

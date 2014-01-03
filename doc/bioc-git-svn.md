@@ -62,6 +62,8 @@ Then in the "Add a Friend" box, type
 
 Then click the **Add** button. This allows the Git-SVN bridge to make changes to your github repository in response to Subversion commits.
 
+###
+
 Again in the nav bar at left, click on "Service Hooks".
 Then click on "WebHook URLs". (there may be a number next to the link).
 In the URL box, enter:
