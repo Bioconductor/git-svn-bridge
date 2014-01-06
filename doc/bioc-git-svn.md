@@ -120,16 +120,19 @@ how you answer this question.
 If both your Subversion and your Github repositories have contents, 
 decide **carefully** how you want to proceed:
 
-* Choosing "SVN wins unconditionally" means that the contents of
-  your SVN repository will completely overwrite the contents of
-  your github repository. You will not have the opportunity
+* Choosing "SVN wins unconditionally" means that if there are any
+  conflicts when merging the two repositories together, the SVN
+  version will overwrite the Github version.
+  You will not have the opportunity
   to manually merge conflicting files. You will still have access
-  to files that were changed, via git's commit history.
+  to the previous versions of
+  files that were changed, via git's commit history.
 
-* Choosing "Git wins unconditionally" means the opposite--the contents
-  of your Github repository will completely overwrite the contents
-  of your SVN repository, and this will then **propagate to the
-  Bioconductor build system**. You will have access to files
+* Choosing "Git wins unconditionally" means the opposite--
+  any merge conflicts will be resolved in Git's favor,
+  and this will then **propagate to the
+  Bioconductor build system**. You will have access to
+  earlier versions of files
   that were changed, but only via svn.
 
 You now need to check two boxes: the first confirms that you have 
