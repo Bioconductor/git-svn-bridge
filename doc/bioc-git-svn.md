@@ -18,7 +18,7 @@ social coding features of Github such as issue tracking and pull requests.
 In order to create a bridge, you must be the maintainer of a Bioconductor 
 package, with read/write access to its directory in the
 Bioconductor
-[Subversion repository](http://localhost:3000/developers/how-to/source-control/).
+[Subversion repository](http://bioconductor.org/developers/how-to/source-control/).
 
 You will also need to create a Github repository which will mirror
 the Subversion repository. If you already have a Github repository that has 
