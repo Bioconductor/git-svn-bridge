@@ -72,7 +72,7 @@ Again in the nav bar at left, click on "Service Hooks".
 Then click on "WebHook URLs". (there may be a number next to the link).
 In the URL box, enter:
 
-    http://git-svn.bioconductor.org/git-push-hook
+    http://gitsvn.bioconductor.org/git-push-hook
 
 **Important Note**: This url must start with `http`, **not** `https`.
 
