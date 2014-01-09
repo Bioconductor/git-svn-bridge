@@ -205,7 +205,7 @@ something like this when you run `svn log -v`:
     Changed paths:
        M /trunk/madman/Rpacks/MyPackage/DESCRIPTION
 
-    Commit made by the git-svn bridge at https://gitsvn.bioconductor.org.
+    Commit made by the Bioconductor Git-SVN bridge.
     Consists of 1 commit(s).
 
     Commit information:

@@ -293,7 +293,7 @@ helpers do
                 end
                 run("git checkout local-hedgehog")
                 commit_msg=<<"EOF"
-Commit made by the git-svn bridge at https://gitsvn.bioconductor.org.
+Commit made by the Bioconductor Git-SVN bridge.
 Consists of #{gitpush['commits'].length} commit(s).
 
 Commit information:
@@ -543,7 +543,7 @@ MESSAGE_END
                 run("git checkout master")
                 # problem was not detected above (result.first), but here.
                 commit_msg=<<"EOF"
-Commit made by the git-svn bridge at https://gitsvn.bioconductor.org.
+Commit made by the Bioconductor Git-SVN bridge.
 SVN Revision: #{doc.log.logentry.attributes['revision'].value}
 SVN Author: #{doc.log.logentry.author.text}
 Commit Date: #{doc.log.logentry.date.text}
