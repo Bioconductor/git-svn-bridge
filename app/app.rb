@@ -559,6 +559,7 @@ EOF
                     #run("git reset origin/master") #?????
                     # this must be unnecessary:
                     ##run("git commit -m 'gitsvn.bioconductor.org auto merge'")
+                    run("git pull")
                     run("git push origin master")
                 else
                     puts2 "result was false!"
