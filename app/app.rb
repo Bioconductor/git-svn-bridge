@@ -39,7 +39,7 @@ https://hedgehog.fhcrc.org/bioconductor/branches/RELEASE_2_13/madman/workflows/
 https://hedgehog.fhcrc.org/bioconductor/trunk/madman/RpacksTesting/
 https://hedgehog.fhcrc.org/bioconductor/branches/RELEASE_2_13/madman/RpacksTesting/)
 
-DOC_URL="https://github.com/dtenenba/bioc-git-svn/blob/master/doc/bioc-git-svn.md"
+DOC_URL="http://bioconductor.org/developers/how-to/git-svn/"
 
     def get_db()
         if File.exists? DB_FILE

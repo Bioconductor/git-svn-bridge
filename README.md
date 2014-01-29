@@ -1,1 +1,1 @@
-See the [documentation](doc/bioc-git-svn.md). 
+See the [documentation](http://bioconductor.org/developers/how-to/git-svn/). 
