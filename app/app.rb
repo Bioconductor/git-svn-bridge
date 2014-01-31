@@ -291,6 +291,18 @@ helpers do
                     # FIXME tell the user...
                     return
                 end
+
+                svndirs = Dir.glob(File.join('**','.svn'))
+                unless svndirs.empty?
+                    problem_merging_to = "svn"
+                    merge_error=<<EOF
+Your git repository has .svn files in it. Please remove them 
+before trying to merge with subversion!
+EOF
+                    notify_custom_merge_problem(merge_error,
+                        local_wc, email, problem_merging_to)
+                end
+
                 run("git checkout local-hedgehog")
                 commit_msg=<<"EOF"
 Commit made by the Bioconductor Git-SVN bridge.
@@ -454,6 +466,52 @@ MESSAGE_END
             smtp.send_message message, 'biocbuild@fhcrc.org', recipient
         end
     end
+
+
+    def notify_custom_merge_problem(merge_error, project, recipient,
+        problem_merging_to)
+        if problem_merging_to == "git"
+            src = "Subversion"
+            dest = "Github"
+            action = "commit"
+            branch = "master"
+        else
+            src = "Github"
+            dest = "Subversion"
+            action = "push"
+            branch = "local-hedgehog"
+        end
+        message = <<"MESSAGE_END"
+From: Bioconductor Git-SVN Bridge <biocbuild@fhcrc.org>
+To: #{recipient}
+Subject: Git merge failure in project #{project}
+
+This is an automated message from the SVN-Git bridge at 
+the Bioconductor project.
+
+In response to a #{src} #{action} to the project '#{project}',
+we tried to merge the latest changes in #{src} with the 
+#{branch} branch in #{dest} and received the following error:
+
+---
+#{merge_error}
+---
+
+
+Please do not reply to this message. 
+If you have questions, please post them to the
+'bioc-devel' list.
+
+
+MESSAGE_END
+
+        # FIXME move smtp host name to config file
+        Net::SMTP.start('mx.fhcrc.org') do |smtp|
+            smtp.send_message message, 'biocbuild@fhcrc.org', recipient
+        end
+    end
+
+
 
     def get_lock_file_name(wc_dir)
         wc_dir.gsub!(/\/$/, "")
