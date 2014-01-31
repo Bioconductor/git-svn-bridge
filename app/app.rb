@@ -935,6 +935,15 @@ post '/newproject' do
                             system2(session[:password], "git svn rebase --username #{session[:username]} hedgehog")
                         end
 
+                        ["master", 'local-hedgehog'].each do |branch|
+                            run("git checkout #{branch}")
+                            svndirs = Dir.glob(File.join('**','.svn'))
+                            unless svndirs.empty?
+                                puts2 "oops, collaboration is not set up properly"
+                                return(haml(:newproject_post, :locals => {:svnfiles => true, :branch => branch}))
+                            end
+                        end
+
                         branchtomerge, branchtogoto = nil
                         conflict = "svn-wins" if repo_is_empty
                         if conflict == "git-wins"
@@ -1101,3 +1110,4 @@ get '/delete_bridge' do
     get_db.execute(query, params[:bridge_id])
     haml :delete_bridge
 end
+

@@ -19,6 +19,12 @@
 -elsif defined? no_write_privs and no_write_privs
     %p.error
         You don't have write permissions on this Subversion directory.
+-elsif defined? svnfiles and svnfiles
+    %p.error
+        You have .svn files in your
+        %span= branch
+        branch. Remove these and try again!
+
 -else
     %h2
         Git-SVN bridge has been created.
