@@ -32,12 +32,20 @@ DB_FILE = "#{settings.root}/data/gitsvn.sqlite3"
 # FIXME - don't hardcode the release version here but get it from
 # the config file for the BioC site. Otherwise, remember 
 # to change it with each new release.
-SVN_ROOTS=%w(https://hedgehog.fhcrc.org/bioconductor/trunk/madman/Rpacks/
-https://hedgehog.fhcrc.org/bioconductor/branches/RELEASE_2_13/madman/Rpacks/
+
+versions=`curl -s http://bioconductor.org/js/versions.js`
+relLine = versions.split("\n").find{|i| i =~ /releaseVersion/}
+releaseVersion = relLine.split('"')[1].sub(".", "_")
+
+roots=<<"EOF"
+https://hedgehog.fhcrc.org/bioconductor/trunk/madman/Rpacks/
+https://hedgehog.fhcrc.org/bioconductor/branches/RELEASE_#{releaseVersion}/madman/Rpacks/
 https://hedgehog.fhcrc.org/bioconductor/trunk/madman/workflows/
-https://hedgehog.fhcrc.org/bioconductor/branches/RELEASE_2_13/madman/workflows/
+https://hedgehog.fhcrc.org/bioconductor/branches/RELEASE_#{releaseVersion}/madman/workflows/
 https://hedgehog.fhcrc.org/bioconductor/trunk/madman/RpacksTesting/
-https://hedgehog.fhcrc.org/bioconductor/branches/RELEASE_2_13/madman/RpacksTesting/)
+https://hedgehog.fhcrc.org/bioconductor/branches/RELEASE_#{releaseVersion}/madman/RpacksTesting/
+EOF
+SVN_ROOTS=roots.split("\n")
 
 DOC_URL="http://bioconductor.org/developers/how-to/git-svn/"
 
