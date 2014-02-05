@@ -972,6 +972,7 @@ post '/newproject' do
                     #res = system2(session[:password],
                     #    "svn export --non-interactive --username #{session[:username]} --password $SVNPASS #{SVN_URL}#{SVN_ROOT}/#{svndir}")
                     Dir.chdir(local_wc) do
+                        run("git checkout master")
                         repo_is_empty = `git branch`.empty?
                         res = system2(session[:password],
                             "svn log --non-interactive --limit 1 --username #{session[:username]} --password $SVNPASS #{rootdir}#{svndir}")
