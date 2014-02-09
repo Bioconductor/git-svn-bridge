@@ -260,7 +260,7 @@ helpers do
         # fixme do this on production only?
         puts2("removing auth directory...")
         FileUtils.rm_rf "#{ENV['HOME']}/.subversion/auth/svn.simple"
-        system2(password, "svn log --non-interactive --limit 1 --username #{username} --password $SVNPASS #{url}")
+        system2(password, "svn log --non-interactive --limit 1 --username #{username} --password \"$SVNPASS\" #{url}")
     end
 
     def handle_git_push(gitpush)
@@ -550,7 +550,7 @@ MESSAGE_END
         encpass = bridge[:encpass]
         password = decrypt(encpass)
         puts2 "owner is #{owner}"
-        res = system2(password, "svn log -v --xml --limit 1 --non-interactive --no-auth-cache --username #{owner} --password $SVNPASS #{SVN_URL}#{repos}", false)
+        res = system2(password, "svn log -v --xml --limit 1 --non-interactive --no-auth-cache --username #{owner} --password \"$SVNPASS\" #{SVN_URL}#{repos}", false)
         doc = Nokogiri::Slop(res.last)
         msg = doc.log.logentry.msg.text
         if (msg =~ /Commit made by the git-svn bridge/)
@@ -746,7 +746,7 @@ post '/login' do
             url = "#{SVN_URL}#{urls.first}"
             # add user to svn auth cache
             res = system2(session[:password],
-                "svn log -l 1 --non-interactive --username #{params[:username]} --password $SVNPASS #{url} > /dev/null 2>&1")
+                "svn log -l 1 --non-interactive --username #{params[:username]} --password \"$SVNPASS\" #{url} > /dev/null 2>&1")
             session[:message] = "Successful Login"
             if session.has_key? :redirect_url
                 redirect_url = session[:redirect_url]
@@ -905,7 +905,7 @@ post '/newproject' do
         svnurl = "#{rootdir}#{svndir}"
         local_wc = get_wc_dirname(svnurl)
         result = system2(session[:password],
-            "svn log --non-interactive --no-auth-cache --username #{session[:username]} --password $SVNPASS --limit 1 #{svnurl}")
+            "svn log --non-interactive --no-auth-cache --username #{session[:username]} --password \"$SVNPASS\" --limit 1 #{svnurl}")
         if result.first != 0 # repos does not exist or user does not have read privs
             return haml :newproject_post, :locals => {:svn_repo_error => true}
         end
@@ -970,16 +970,16 @@ post '/newproject' do
                     FileUtils.rm_rf local_wc # just in case
                     result = run("git clone #{git_ssh_url} #{local_wc}")
                     #res = system2(session[:password],
-                    #    "svn export --non-interactive --username #{session[:username]} --password $SVNPASS #{SVN_URL}#{SVN_ROOT}/#{svndir}")
+                    #    "svn export --non-interactive --username #{session[:username]} --password \"$SVNPASS\" #{SVN_URL}#{SVN_ROOT}/#{svndir}")
                     Dir.chdir(local_wc) do
                         run("git checkout master")
                         repo_is_empty = `git branch`.empty?
                         res = system2(session[:password],
-                            "svn log --non-interactive --limit 1 --username #{session[:username]} --password $SVNPASS #{rootdir}#{svndir}")
+                            "svn log --non-interactive --limit 1 --username #{session[:username]} --password \"$SVNPASS\" #{rootdir}#{svndir}")
 
                         run("git config --add svn-remote.hedgehog.url #{rootdir}#{svndir}")
                         res = system2(session[:password],
-                            "svn log --non-interactive --limit 1 --username #{session[:username]} --password $SVNPASS #{rootdir}#{svndir}")
+                            "svn log --non-interactive --limit 1 --username #{session[:username]} --password \"$SVNPASS\" #{rootdir}#{svndir}")
                         run("git config --add svn-remote.hedgehog.fetch :refs/remotes/hedgehog")
                         exclusive_lock() do
                             cache_credentials(session[:username], session[:password])
