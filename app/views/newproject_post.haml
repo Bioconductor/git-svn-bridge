@@ -9,6 +9,9 @@
 -elsif defined? collab_ok and !collab_ok
     %p.error
         It looks like bioc-sync has not been added as a collaborator to your Github repository.
+-elsif defined? no_master and no_master
+    %p.error
+        Your Github repository must have a master branch!
 -elsif defined? svn_repo_error and svn_repo_error
     %p.error
         Either this SVN repository doesn't exist, or you don't have read

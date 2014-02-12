@@ -972,6 +972,12 @@ post '/newproject' do
                     #res = system2(session[:password],
                     #    "svn export --non-interactive --username #{session[:username]} --password \"$SVNPASS\" #{SVN_URL}#{SVN_ROOT}/#{svndir}")
                     Dir.chdir(local_wc) do
+                        result = run("git branch -r")
+                        lines = result.last.gsub(/ +/, "").split("\n")
+                        unless lines.include? 'origin/master'
+                            puts2 "oops, no remote master branch"
+                            return(haml(:newproject_post, :locals => {:no_master => true}))
+                        end
                         run("git checkout master")
                         repo_is_empty = `git branch`.empty?
                         res = system2(session[:password],
