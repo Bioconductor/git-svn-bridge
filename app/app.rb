@@ -25,6 +25,7 @@ end
 #use Rack::Session::Cookie, secret: 'change_me'
 enable :sessions
 
+set :views, File.dirname(__FILE__) + "/views"
 set :session_secret, IO.readlines("data/session_secret.txt").first
 
 DB_FILE = "#{settings.root}/data/gitsvn.sqlite3"
