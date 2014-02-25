@@ -817,7 +817,7 @@ post '/git-push-hook' do
             obj = JSON.parse(params["payload"])
             if obj.has_key? "zen"
                 puts2 "responding to ping"
-                return "Why don't you #{obj["zen"]}"
+                return "#{obj["zen"]} Wow, that's pretty zen!"
             end
         end
     end
