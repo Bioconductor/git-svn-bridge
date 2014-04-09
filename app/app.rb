@@ -25,6 +25,7 @@ end
 #use Rack::Session::Cookie, secret: 'change_me'
 enable :sessions
 
+set :default_encoding, "utf-8"
 set :views, File.dirname(__FILE__) + "/views"
 set :session_secret, IO.readlines("data/session_secret.txt").first
 
