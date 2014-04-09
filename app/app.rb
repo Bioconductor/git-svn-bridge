@@ -811,17 +811,21 @@ post '/git-push-hook' do
     log.puts push
     log.close
     # FIXME trap error here
-    unless params.has_key? :payload
-        puts2 "no :payload key, either a bad payload or a ping"
-        if params.has_key? "payload"
-            obj = JSON.parse(params["payload"])
-            if obj.has_key? "zen"
-                puts2 "responding to ping"
-                return "#{obj["zen"]} Wow, that's pretty zen!"
-            end
-        end
+
+
+
+    unless params.has_key? 'payload'
+        puts2 "no 'payload' key, probably a bad payload"
+        return "sorry"
     end
-    gitpush = JSON.parse(params[:payload])
+
+    obj = JSON.parse(params["payload"])
+    if obj.has_key? "zen"
+        puts2 "responding to ping"
+        return "#{obj["zen"]} Wow, that's pretty zen!"
+    end
+
+    gitpush = JSON.parse(obj)
 
     ## make sure we're not in a vicious circle...
 
