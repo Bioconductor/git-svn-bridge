@@ -819,13 +819,12 @@ post '/git-push-hook' do
         return "sorry"
     end
 
-    obj = JSON.parse(params["payload"])
-    if obj.has_key? "zen"
+    gitpush = JSON.parse(params["payload"])
+    if gitpush.has_key? "zen"
         puts2 "responding to ping"
         return "#{obj["zen"]} Wow, that's pretty zen!"
     end
 
-    gitpush = JSON.parse(obj)
 
     ## make sure we're not in a vicious circle...
 
