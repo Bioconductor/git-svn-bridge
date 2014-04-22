@@ -790,7 +790,7 @@ post '/git-push-hook' do
     # DON'T specify usessl! here!
     # make sure the request comes from one of these IP addresses:
     # 204.232.175.64/27, 192.30.252.0/22. (or is us, testing)
-    unless request.ip =~ /^204\.232\.175|^192\.30\.252|^140\.107/
+    unless request.ip =~ /^204\.232\.175|^192\.30\.252|^140\.107|23\.23\.227\.214/
         puts2 "/git-push-hook: got a request from an invalid ip (#{request.ip})"
         return "You don't look like github to me."
     end
