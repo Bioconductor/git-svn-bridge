@@ -11,4 +11,5 @@ responsecode = lines.find{|i| i =~ /^HTTP\/1\.1 /}.split(" ")[1]
 
 unless responsecode == "200"
     `service apache2 restart`
+    puts "restarted apache at `date`."
 end
