@@ -3,7 +3,7 @@
 # This should be run as root (by cron maybe).
 # It makes sure the server is up.
 
-res = `curl -I https://gitsvn.bioconductor.org`
+res = `curl -s -I https://gitsvn.bioconductor.org`
 
 lines = res.split "\n"
 
