@@ -86,10 +86,17 @@ def loop_through_bridges
                 for branch in branches
                     lcd = get_last_known_commit_date(file, (branch=="master"))
                     commits = get_github_commits(file, lcd)
-                    unless commits.empty?
-                        # do something      
-                        puts "#{file} has fallen behind (by #{commits.length}) on #{branch} - #{lcd}"                  
+                    res = `git checkout local-hedgehog`
+                    status = `git status`
+                    puts "\nin #{file}\n"
+                    unless status =~ /Your branch is up-to-date/
+                        puts "status is:\n #{status}\n\n"
                     end
+
+                    #unless commits.empty?
+                        # do something      
+                        #puts "#{file} has fallen behind (by #{commits.length}) on #{branch} - #{lcd}"                  
+                    #end
                 end
             end
         end
