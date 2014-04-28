@@ -890,9 +890,16 @@ get '/newproject' do
     haml :newproject
 end
 
+
+
+
 post '/newproject' do
     protected!
     usessl!
+    post_newproject(params)
+end
+
+def post_newproject(params) 
     puts2 "in post handler for newproject"
     dupe_repo = dupe_repo?(params)
     if dupe_repo
