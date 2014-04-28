@@ -899,10 +899,7 @@ post '/newproject' do
     post_newproject(params)
 end
 
-def post_newproject(params, sesh=nil)
-    unless sesh.nil?
-        session = sesh
-    end
+def post_newproject(params) 
     puts2 "in post handler for newproject"
     dupe_repo = dupe_repo?(params)
     if dupe_repo
