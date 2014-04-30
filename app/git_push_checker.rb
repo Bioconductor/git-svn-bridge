@@ -165,5 +165,5 @@ end
 def auth(dir)
     bridge, user = getinfo(dir)
     pw = getpw(dir)
-    "svn log --limit 1 --username #{user["svn_username"]} --password #{pw}  #{bridge["svnrepos"]}"
+    "svn log --limit 1 --username #{user["svn_username"]} --password #{pw}  #{bridge["svn_repos"]}"
 end
