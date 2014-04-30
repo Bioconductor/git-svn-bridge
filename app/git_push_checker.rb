@@ -3,6 +3,9 @@ require 'time'
 require 'sqlite3'
 require 'net/http'
 require 'octokit'
+require 'open3'
+require 'crypt/gost'
+require 'base64'
 
 
 uri = URI("http://bioconductor.org/js/versions.js")
@@ -38,8 +41,8 @@ def get_last_known_commit_date(wc_dir, master_branch)
         branch = "local-hedgehog"
     end
     Dir.chdir(path) do
-        res = `git log #{branch} -n 1` # make sure branch exists!
-        lines = res.split("\n")
+        arr = run("git log #{branch} -n 1") # make sure branch exists!
+        lines = arr.first.split("\n")
         dateline = lines.find{|i| i =~ /^Date:/}
         date = dateline.sub /^Date:\s+/, ""
         # example: Sun Apr 20 19:00:53 2014 +0000
@@ -47,6 +50,14 @@ def get_last_known_commit_date(wc_dir, master_branch)
         t = Time.parse(d.to_s)
         return(t.utc.iso8601)
     end    
+end
+
+
+def run(cmd)
+    `echo ""` # needed to reset $?
+    sin, sout, serr = Open3.popen3 cmd
+    res = $?
+    [sout.readlines.join.strip, serr.readlines.join.strip, res.to_i]
 end
 
 def get_github_commits(wc_dir, since_date)
@@ -84,15 +95,23 @@ def loop_through_bridges
             Dir.chdir(path) do
                 branches = ["master", "local-hedgehog"]
                 for branch in branches
+                    saidit = false
                     lcd = get_last_known_commit_date(file, (branch=="master"))
                     commits = get_github_commits(file, lcd)
-                    res = `git checkout local-hedgehog`
-                    status = `git status`
-                    puts "\nin #{file}\n"
-                    unless status =~ /Your branch is up-to-date/
-                        puts "status is:\n #{status}\n\n"
+                    res = run("git checkout #{branch}")
+                    unless res.first.empty? or res.first =~ /^Your branch is up-to-date with/
+                        puts "\n\nDir: #{file} Branch: #{branch}" 
+                        puts res.first 
+                        saidit = true
+                    end                        
+                    res = run("git status")
+                    unless res.first.empty? or res.first =~ /Your branch is up-to-date with/
+                        unless saidit
+                            puts "\n\nDir: #{file} Branch: #{branch}" 
+                            #saidit = false
+                        end
+                        puts res.first 
                     end
-
                     #unless commits.empty?
                         # do something      
                         #puts "#{file} has fallen behind (by #{commits.length}) on #{branch} - #{lcd}"                  
@@ -110,4 +129,41 @@ def post_commit(commit_obj)
     uri = URI.parse("http://gitsvn.bioconductor.org/git-push-hook")
     json = commit_obj.to_json
     response = Net::HTTP.post_form(uri, {"payload" => json})
+end
+
+def hashify(res)
+    columns = res.first 
+    values = res.last
+
+    h = {}
+
+    columns.each_with_index do |col, i|
+        h[col] = values[i]
+    end
+    h
+end
+
+
+def getinfo(dir)
+    res = @db.execute2("select * from bridges where local_wc = ?", dir)
+    bridge = hashify(res)
+    res = @db.execute2("select * from users where rowid = ?", bridge["user_id"])
+    user = hashify(res)
+    [bridge, user]
+end
+
+def getpw(dir)
+    bridge, user = getinfo(dir)
+    f = File.open("/home/ubuntu/app/etc/key")
+    key = f.readlines.first.chomp
+    f.close
+    $gost = Crypt::Gost.new(key)
+    decoded = Base64.decode64(user["encpass"])
+    $gost.decrypt_string(decoded)
+end
+
+def auth(dir)
+    bridge, user = getinfo(dir)
+    pw = getpw(dir)
+    "svn log --limit 1 --username #{user["svn_username"]} --password #{pw}  #{bridge["svnrepos"]}"
 end
