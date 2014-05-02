@@ -135,10 +135,7 @@ module GSBCore
         for item in diff[:to_be_deleted]
             if dest_vcs == "git"
                 gitname = gitname(item)
-                puts "item is #{item} and gitname(item) is #{gitname(item)}"
                 Dir.chdir dest do
-                    puts "we are in #{Dir.pwd}"
-                    pp Dir.entries(Dir.pwd)
                     flag = File.directory?(item) ? " -r " : ""
                     res = run("git rm #{flag} #{item}")
                     unless success(res)
