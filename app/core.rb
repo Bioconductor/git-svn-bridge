@@ -99,10 +99,7 @@ module GSBCore
         to_be_copied = []
         raise "src dir #{src} doesn't exist!" unless File.directory? src
         raise "dest dir #{dest} doesn't exist!" unless File.directory? dest
-        #res = run("diff -rq -x .git -x .svn #{src} #{dest}")
-        #res = `diff -rq -x .git -x .svn #{src} #{dest}`
-        res = GSBCore.run("ls")
-        return if true
+        res = run("diff -rq -x .git -x .svn #{src} #{dest}")
         lines = res[1].split "\n"
         for line in lines
             if line =~ /^Only in #{src}:/
