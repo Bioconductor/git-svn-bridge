@@ -21,6 +21,7 @@ def breakpoint()
     binding.pry if ENV['RACK_ENV'].nil?
 end
 
+ENV['RUNNING_SINATRA'] = "true"
 
 #use Rack::Session::Cookie, secret: 'change_me'
 enable :sessions

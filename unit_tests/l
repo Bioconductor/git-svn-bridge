@@ -1,0 +1,34 @@
+Loaded suite tc_core
+in at_start
+Started
+
+
+Finished in 0.001004 seconds.
+
+0 tests, 1 assertions, 0 failures, 0 errors, 0 pendings, 0 omissions, 0 notifications
+0% passed
+
+0.00 tests/s, 996.02 assertions/s/Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit/error.rb:117:in `add_error': undefined method `add_error' for #<String:0x007fbeabcca3c8> (NoMethodError)
+	from /Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit/error.rb:89:in `handle_all_exception'
+	from /Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit/testcase.rb:700:in `block in handle_exception'
+	from /Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit/testcase.rb:696:in `each'
+	from /Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit/testcase.rb:696:in `handle_exception'
+	from /Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit/testcase.rb:436:in `rescue in run'
+	from /Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit/testcase.rb:443:in `run'
+	from /Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit/testsuite.rb:121:in `run_test'
+	from /Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit/testsuite.rb:53:in `run'
+	from /Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit/testsuite.rb:121:in `run_test'
+	from /Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit/testsuite.rb:53:in `run'
+	from /Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit/ui/testrunnermediator.rb:65:in `run_suite'
+	from /Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit/ui/testrunnermediator.rb:44:in `block in run'
+	from /Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit/ui/testrunnermediator.rb:100:in `with_listener'
+	from /Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit/ui/testrunnermediator.rb:40:in `run'
+	from /Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit/ui/testrunner.rb:40:in `start_mediator'
+	from /Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit/ui/testrunner.rb:25:in `start'
+	from /Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit/ui/testrunnerutilities.rb:24:in `run'
+	from /Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit/autorunner.rb:409:in `block in run'
+	from /Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit/autorunner.rb:465:in `change_work_directory'
+	from /Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit/autorunner.rb:408:in `run'
+	from /Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit/autorunner.rb:59:in `run'
+	from /Library/Ruby/Gems/2.0.0/gems/test-unit-2.5.5/lib/test/unit.rb:502:in `block (2 levels) in <top (required)>'
+
