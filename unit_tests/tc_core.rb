@@ -67,5 +67,19 @@ class TestCore < Test::Unit::TestCase
         end
     end
 
+    def test_diff3
+        Dir.chdir $tmpdir do
+            f = File.open("#{@git_testrepo}/foo", "w")
+            f.write "txt1"
+            f.close
+            f = File.open("#{@svn_testrepo}/foo", "w")
+            f.write "txt2"
+            f.close
+            diff = GSBCore.get_diff(@git_testrepo, @svn_testrepo)
+            expected = {:to_be_added=>[], :to_be_deleted=>[], :to_be_copied=>["foo"]}
+            assert_equal(expected, diff)
+        end
+    end
+
 end
 
