@@ -125,6 +125,8 @@ module GSBCore
 
     # should also be run from ~/biocsync
     def GSBCore.resolve_diff(src, dest, diff, dest_vcs)
+        src = File.expand_path src
+        dest = File.expand_path dest
         if diff.nil?
             puts2 "nothing to do!"
             return
@@ -133,10 +135,14 @@ module GSBCore
         for item in diff[:to_be_deleted]
             if dest_vcs == "git"
                 gitname = gitname(item)
-                Dir.chdir gitname do
-                    res = run("git rm #{gitname}")
+                puts "item is #{item} and gitname(item) is #{gitname(item)}"
+                Dir.chdir dest do
+                    puts "we are in #{Dir.pwd}"
+                    pp Dir.entries(Dir.pwd)
+                    flag = File.directory?(item) ? " -r " : ""
+                    res = run("git rm #{flag} #{item}")
                     unless success(res)
-                        raise "Failed to git rm #{gitname}!"
+                        raise "Failed to git rm #{flag} #{gitname}!"
                     end
                 end
             else # svn
@@ -151,14 +157,15 @@ module GSBCore
 
         for item in adds
             # copy
-            if File.directory? item
-                FileUtils.mkdir(item.sub(/^#{src_vcs}/, dest_vcs))
+
+            if File.directory? "#{src}/#{item}"
+                FileUtils.mkdir "#{dest}/#{item}"
             else
-                FileUtils.cp "#{src_vcs}/#{item}", "#{dest_vcs}/#{item}"
+                FileUtils.cp "#{src}/#{item}", "#{dest}/#{item}"
             end
 
             if dest_vcs == "git"
-                Dir.chdir "git" do
+                Dir.chdir dest do
                     gitname = gitname(item)
                     res = run("git add #{gitname}")
                     unless success(res)
@@ -166,10 +173,12 @@ module GSBCore
                     end
                 end
             else # svn
-                if diff[:to_be_added].include? item
-                    res = run("svn add #{item}")
-                    unless success(res)
-                        raise "Failed to svn add #{item}!"
+                Dir.chdir dest do
+                    if diff[:to_be_added].include? item
+                        res = run("svn add #{item}")
+                        unless success(res)
+                            raise "Failed to svn add #{item}!"
+                        end
                     end
                 end
             end

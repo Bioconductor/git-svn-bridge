@@ -75,14 +75,20 @@ rows = @db.execute2("select * from bridges;")
 columns = rows.shift
 
 dirs = ["git", "svn"]
+dirs = ["git"]
 
 Dir.chdir "/home/ubuntu/biocsync" do
     rows.each_with_index do |row, i|
         for dir in dirs
             Dir.chdir dir do
                 if dir == "git"
-                    # puts "cloning #{row[1]}..."
-                    # run("git clone #{row[3]} #{row[1]}")
+                    unless File.exists? row[1]
+                        puts "cloning #{row[1]}..."
+                        url = row[3]
+                        url = url.sub(/^https:\/\/github.com\//i, "git@github.com:")
+                        url = "#{url}.git"
+                        run("git clone #{url} #{row[1]}")
+                    end
                 else
                     #puts "does #{row[1]} exist? #{File.exists? row[1]}"
                     unless File.exists? row[1]
