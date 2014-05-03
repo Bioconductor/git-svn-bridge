@@ -3,6 +3,8 @@ require "test-unit"
 require "test/unit"
 #require 'minitest/unit'
 
+ENV['TESTING_GSB'] = 'true'
+
 Test::Unit.at_start do
   puts "in at_start"
 end

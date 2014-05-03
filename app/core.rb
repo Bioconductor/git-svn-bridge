@@ -18,7 +18,7 @@ require 'net/http'
 
 
 APP_ROOT = File.expand_path(File.dirname(__FILE__))
-
+SVN_URL="https://hedgehog.fhcrc.org/bioconductor"
 
 f = File.open("#{APP_ROOT}/etc/key")
 key = f.readlines.first.chomp
@@ -26,7 +26,8 @@ f.close
 $gost = Crypt::Gost.new(key)
 
 
-DB_FILE = "#{APP_ROOT}/data/gitsvn.sqlite3"
+DB_FILE =  ENV['TESTING_GSB'] == 'true' ? "#{APP_ROOT}/data/unittest.sqlite3" :
+     "#{APP_ROOT}/data/gitsvn.sqlite3"
 
 # Remove Trailing Slash
 class String
@@ -87,11 +88,10 @@ module GSBCore
     end
 
 
-    def GSBCore.dupe_repo?(params)
-        svn_repos = "#{params[:rootdir]}#{params[:svndir]}"
+    def GSBCore.dupe_repo?(svnurl)
         row = 
           get_db().get_first_row("select * from bridges where svn_repos = ?",
-            svn_repos)
+            svnurl)
         !row.nil?
     end
 
@@ -154,7 +154,7 @@ module GSBCore
                 # FIXME this currently returns false but we don't check 
                 # or change behavior accordingly
                 # HEY, that could be important! that could be why repos get hosed?!?
-                exclusive_lock() do
+                GSBCore.lock() do
                     cache_credentials(owner, password)
                     res = system2(password, "git svn rebase --username #{owner}", true)
                     if res.last =~ /^Current branch local-hedgehog is up to date\./
@@ -195,8 +195,7 @@ EOF
 
 
 
-    def GSBCore.exclusive_lock()
-        lockfile = "/tmp/gitsvn-exclusive-lock-file"
+    def GSBCore.lock(lockfile = "/tmp/gitsvn-exclusive-lock-file")
         File.open(lockfile, File::RDWR|File::CREAT, 0644) {|f|
             f.flock(File::LOCK_EX)
             yield if block_given?
@@ -327,7 +326,7 @@ EOF
                 puts2 "before system"
                 #run("git svn dcommit --add-author-from --username #{owner}")
                 res = nil
-                exclusive_lock() do
+                GSBCore.lock() do
                     cache_credentials(owner, password)
     ###                res = system2(password, "git svn rebase --username #{owner}", true)
                     res = system2(password, "git svn dcommit --no-rebase --add-author-from --username #{owner}",
@@ -531,9 +530,86 @@ EOF
         result.first.exitstatus == 0
     end
 
+    def GSBCore.bridge_sanity_checks(githuburl, svnurl, conflict, username, password)
+        segs = githuburl.split("/")
+        gitprojname = segs.pop
+        githubuser = segs.pop
 
-    def GSBCore.create_new_project()
+        # verify that svn repos exists and user has read permissions on it
+        local_wc = get_wc_dirname(svnurl)
+        result = system2(password,
+            "svn log --non-interactive --no-auth-cache --username #{username} --password \"$SVNPASS\" --limit 1 #{svnurl}")
+        if result.first != 0 # repos does not exist or user does not have read privs
+            raise "repo_error"
+        end
+
+        # verify that user has write permission to the SVN repos
+        auth_urls = auth("#{APP_ROOT}/etc/bioconductor.authz", username, password, true)
+        write_privs = false
+        if auth_urls.is_a? Array
+            lookfor = svnurl.sub(/^#{SVN_URL}/, "")
+            for auth_url in auth_urls
+                if lookfor =~ /^#{auth_url}/
+                    write_privs = true
+                    break
+                end
+            end
+        else
+            write_privs = false
+        end
+
+        unless write_privs # no write privs to specified svn dir
+            raise "no_write_privs"
+        end
+
+        # verify that github url exists
+
+        url = URI.parse(githuburl)
+        req = Net::HTTP.new(url.host, url.port)
+        req.use_ssl = true
+        res = req.request_head(url.path)
+        unless res.code =~ /^2/ # github repo not found
+            raise "no_github_repo"
+        end
+
+        data = URI.parse("https://api.github.com/repos/#{githubuser}/#{gitprojname}/collaborators").read
+        obj = JSON.parse(data)
+        ok = false
+        for item in obj
+            if item.has_key? "login" and item["login"] == 'bioc-sync'
+                ok = true
+                break
+            end
+        end
+        unless ok
+            raise "bad_collab"
+        end
+
     end
+
+
+    def GSBCore.new_bridge(githuburl, svnurl, conflict, username, password)
+        if dupe_repo?(svnurl)
+            raise "dupe_repo"
+        end
+
+        unless ENV['TESTING_GSB'] == 'true'
+            bridge_sanity_checks(githuburl, svnurl, conflict, username, password)
+        end
+
+        segs = githuburl.split("/")
+        gitprojname = segs.pop
+        githubuser = segs.pop
+
+        git_ssh_url = "git@github.com:#{githubuser}/#{gitprojname}.git"
+
+        lockfile = get_lock_file_name(svnurl)
+        GSBCore.lock(lockfile) do
+            
+        end
+
+    end
+
 
     def GSBCore.handle_svn_commit()
     end

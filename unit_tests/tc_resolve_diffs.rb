@@ -6,6 +6,7 @@ require 'fileutils'
 require 'tmpdir'
 require 'pp'
 
+ENV['TESTING_GSB'] = 'true'
 
 
 class TestResolveDiffs < Test::Unit::TestCase

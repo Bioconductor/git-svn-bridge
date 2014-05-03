@@ -6,16 +6,19 @@ require 'fileutils'
 require 'tmpdir'
 require 'pp'
 
+ENV['TESTING_GSB'] = 'true'
+
 
 Test::Unit.at_start do
-  puts "in at_start"
-  $tmpdir = Dir.mktmpdir
-  puts "$tmpdir = #{$tmpdir}"
+    ENV['TESTING_GSB'] = 'true'
+    puts "in at_start"
+    $tmpdir = Dir.mktmpdir
+    puts "$tmpdir = #{$tmpdir}"
 end
 
 Test::Unit.at_exit do
-  puts "in at_exit"
-  FileUtils.rm_rf $tmpdir
+    puts "in at_exit"
+    FileUtils.rm_rf $tmpdir
 end
 
 

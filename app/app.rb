@@ -289,21 +289,32 @@ post '/newproject' do
     end
 
     githuburl = params[:githuburl].rts
-    segs = githuburl.split("/")
-    gitprojname = segs.pop
-    githubuser = segs.pop
+    # segs = githuburl.split("/")
+    # gitprojname = segs.pop
+    # githubuser = segs.pop
     svndir = params[:svndir]
     rootdir = params[:rootdir]
     conflict = params[:conflict]
 
+    svnurl = "#{rootdir}#{svndir}"
 
     begin
-        GSBCore.new_bridge(githuburl, githubuser, svndir, rootdir, conflict)
+        GSBCore.new_bridge(githuburl, svnurl, conflict, session[:username], session[:password])
         return haml :newproject_post, :locals => {:dupe_repo => false, :collab_ok => true}
     rescue Exception => ex
-        if ex.message =~ "dupe_repo"
+        if ex.message == "dupe_repo"
             return   haml :newproject_post, :locals => {:dupe_repo => true, :collab_ok => true}
-        else
+        elsif ex.message == "repo_error"
+            return haml :newproject_post, :locals => {:svn_repo_error => true}
+        elsif ex.message == "no_write_privs"
+            return haml :newproject_post, :locals => {:no_write_privs => true}
+        elsif ex.message == "no_github_repo"
+            return haml :newproject_post, :locals => {:invalid_github_repo => true}
+        elsif ex.message == "bad_collab"
+            return haml :newproject_post, :locals => {:dupe_repo => false, :collab_ok => false}
+
+            
+
         end
     end
 end

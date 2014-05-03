@@ -5,6 +5,8 @@ include GSBCore
 
 require 'yaml'
 
+ENV['TESTING_GSB'] = 'true'
+
 class TestLogin < Test::Unit::TestCase
 
     $config = YAML.load_file("#{APP_ROOT}/etc/config.yml")
