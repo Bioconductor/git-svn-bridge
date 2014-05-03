@@ -120,11 +120,37 @@ class TestResolveDiffs < Test::Unit::TestCase
         Dir.chdir @tmpdir do
             diff = GSBCore.get_diff("svn/testrepo", "git/testrepo")
             expected = {:to_be_added=>["bdir"], :to_be_deleted=>["adir"], :to_be_copied=>["foo.txt"]}
-            pp diff
             assert_equal expected, diff
             GSBCore.resolve_diff(@svn_testrepo, @git_testrepo, diff, "git")
             diff2 = GSBCore.get_diff("svn/testrepo", "git/testrepo")
             assert_nil diff2
+        end
+    end
+
+    def setup_repos_3
+        Dir.chdir @git_testrepo do
+            f = File.open(".gitignore", "w")
+            f.puts "badpat*"
+            f.close
+            `git add .gitignore`
+            `git commit -m 'add .gitignore'`
+            `git push`
+        end
+        Dir.chdir @svn_testrepo do
+            f = File.open("badpat1", "w")
+            f.write("stuff")
+            f.close
+            `svn add badpat1`
+            `svn ci -m 'add badpat1'`
+        end
+    end
+
+    def test_resolve_diff_3
+        setup_repos_3
+        Dir.chdir @tmpdir do
+            diff = GSBCore.get_diff("svn/testrepo", "git/testrepo")
+            puts "telomere"
+            pp diff
         end
     end
 end

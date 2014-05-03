@@ -46,7 +46,26 @@ module GSBCore
     end
 
 
-    def GSBCore.system2()
+    def GSBCore.system2(pw, cmd, echo=false)
+        if echo
+            cmd = "echo $SVNPASS | #{cmd}"
+        end
+        env = {"SVNPASS" => pw}
+        puts2 "running SYSTEM command: #{cmd}"
+        begin
+            stdin, stdout, stderr, thr = Open3.popen3(env, cmd)
+        rescue
+            puts2 "Caught an error running system command"
+        end
+        result = thr.value.exitstatus
+        puts2 "result code: #{result}"
+        stdout_str = stdout.gets(nil)
+        stderr_str = stderr.gets(nil)
+        # FIXME - apparently not all output (stderr?) is shown when there is an error
+        puts2 "stdout output:\n#{stdout_str}"
+        puts2 "stderr output:\n#{stderr_str}"
+        puts2 "---system2() done---"
+        [result, stderr_str, stdout_str] #though it gets returned ok
     end
 
     def GSBCore.run(cmd)
@@ -163,10 +182,22 @@ module GSBCore
 
             if dest_vcs == "git"
                 Dir.chdir dest do
-                    gitname = gitname(item)
-                    res = run("git add #{gitname}")
+                    res = system2("", "git add --dry-run #{item}")
+                    # weed out baddies
+                    if res[1] =~ /^The following paths are ignored/ 
+                        # don't add this one, it's ignored
+                        # by .gitignore
+                        # instead, delete it
+                        if File.directory? item
+                            FileUtils.rm_rf item
+                        else
+                            FileUtils.rm item
+                        end
+                        next
+                    end
+                    res = run("git add #{item}")
                     unless success(res)
-                        raise "Failed to git add #{gitname}!"
+                        raise "Failed to git add #{item}!"
                     end
                 end
             else # svn

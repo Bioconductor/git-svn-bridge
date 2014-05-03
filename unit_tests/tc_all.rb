@@ -1,3 +1,6 @@
+# run this file in order to run all unit tests.
+# each test file but be added manually below.
+
 require "test-unit"
 require 'test/unit'
 
