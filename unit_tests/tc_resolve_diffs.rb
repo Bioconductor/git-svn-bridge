@@ -132,6 +132,7 @@ class TestResolveDiffs < Test::Unit::TestCase
             f = File.open(".gitignore", "w")
             f.puts "badpat*"
             f.close
+            FileUtils.cp ".gitignore", @svn_testrepo
             `git add .gitignore`
             `git commit -m 'add .gitignore'`
             `git push`
@@ -149,8 +150,11 @@ class TestResolveDiffs < Test::Unit::TestCase
         setup_repos_3
         Dir.chdir @tmpdir do
             diff = GSBCore.get_diff("svn/testrepo", "git/testrepo")
-            puts "telomere"
-            pp diff
+            expected = {:to_be_added=>["badpat1"], :to_be_deleted=>[], :to_be_copied=>[]}
+            assert_equal expected, diff
+            GSBCore.resolve_diff(@svn_testrepo, @git_testrepo, diff, "git")
+            diff2 = GSBCore.get_diff(@svn_testrepo, @git_testrepo)
+            assert_equal diff2, diff
         end
     end
 end
