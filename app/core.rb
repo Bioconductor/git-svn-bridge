@@ -354,7 +354,11 @@ EOF
 
 
     def GSBCore.get_wc_dirname(svn_url)
-        svn_url.sub(SVN_URL, "").gsub("/", "_").sub(/^_/, "")
+        if svn_url =~ /#{SVN_URL}/
+            return svn_url.sub(SVN_URL, "").gsub("/", "_").sub(/^_/, "")
+        else
+            return svn_url.sub(/^file:\/\//i, "").gsub("/", "_")
+        end
     end
 
 
@@ -601,15 +605,92 @@ EOF
         gitprojname = segs.pop
         githubuser = segs.pop
 
-        git_ssh_url = "git@github.com:#{githubuser}/#{gitprojname}.git"
+        git_ssh_url = nil
+        if (githuburl =~ /https:\/\/github.com/i)
+            git_ssh_url = "git@github.com:#{githubuser}/#{gitprojname}.git"
+        else
+            git_ssh_url = githuburl
+        end
+
+        local_wc = get_wc_dirname(svnurl)
 
         lockfile = get_lock_file_name(svnurl)
         GSBCore.lock(lockfile) do
-            
+            Dir.chdir "#{ENV['HOME']}/biocsync" do
+                Dir.chdir("git") do
+                    raise "git_wc_exists" if File.exists? local_wc # not caught!
+                    res  = run("git clone #{git_ssh_url} #{local_wc}")
+                    raise "git_clone_failed" unless success(res)
+                    Dir.chdir(local_wc) do
+                        repo_is_empty = false
+                        res = run("git branch")
+                        repo_is_empty = true if res.last.empty?
+                        unless repo_is_empty
+                            if res.last =~ / master\n/
+                                run("git checkout master")
+                            else
+                                # repo is not empty but there is no master branch.
+                                # what to do?
+                            end
+                        end
+                    end
+                end
+                Dir.chdir("svn") do
+                    res = system2(password, "svn co #{svnflags username} #{svnurl} #{local_wc}")
+                end
+                src, dest, dest_vcs = nil
+                if conflict == "git-wins"
+                    src = "git/#{local_wc}"
+                    dest = "svn/#{local_wc}"
+                    dest_vcs = "svn"
+                elsif conflict == "svn-wins"
+                    src = "svn/#{local_wc}"
+                    dest = "git/#{local_wc}"
+                    dest_vcs = "git"
+                else
+                    raise "invalid conflict value"
+                end
+                diff = get_diff src, dest
+                resolve_diff src, dest, diff, dest_vcs
+                if dest_vcs == "git"
+                    git_commit_and_push(dest, "setting up git-svn bridge")
+                else
+                    svn_commit(dest, "setting up git-svn bridge")
+                end
+            end
         end
 
     end
 
+    # FIXME git pull first?
+    def GSBCore.git_commit_and_push(git_wc_dir, commit_comment)
+        commit_file = Tempfile.new "gsb_git_commit_message"
+        commit_file.write commit_comment
+        commit_file.close
+        Dir.chdir git_wc_dir do
+            res = run("git commit -F #{commit_file.path}")
+            raise "git_commit_failed" unless success(res)
+            res = run("git push")
+            raise "push_failed" unless success(res)
+        end
+        commit_file.unlink
+    end
+
+    # FIXME svn up first?
+    def GSBCore.svn_commit(svn_wc_dir, commit_comment)
+        commit_file = Tempfile.new "gsb_svn_commit_message"
+        commit_file.write commit_comment
+        commit_file.close
+        Dir.chdir svn_wc_dir do
+            res = run("svn commit -F #{commit_file.path}")
+            raise "svn_commit_failed" unless success(res)
+        end
+        commit_file.unlink
+    end
+
+    def GSBCore.svnflags(username)
+        " --username #{username} --password $SVNPASS --non-interactive --no-auth-cache "
+    end
 
     def GSBCore.handle_svn_commit()
     end
