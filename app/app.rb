@@ -135,42 +135,23 @@ end
 
 post '/login' do
     usessl!
-    # f = File.open("etc/specialpass")
-    # specialpass = f.readlines.first.chomp
-    # if params[:specialpass] != specialpass
-    #     session[:message] = "Incorrect special password."
-    #     redirect url('/')
-    # end
-    if auth("etc/bioconductor.authz", params['username'], params['password'])
-        urls = auth("etc/bioconductor.authz",
-            params[:username],
-            params[:password],
-            true)
-        if urls.nil? or urls.empty?
-            session[:message] = "You don't have permission to write to any SVN repositories."
-        else
-            session[:username] = params[:username]
-            session[:password] = params[:password] # ahem
-            url = "#{SVN_URL}#{urls.first}"
-            # add user to svn auth cache
-            # res = GSBCore.system2(session[:password],
-            #     "svn log -l 1 --non-interactive --username #{params[:username]} --password \"$SVNPASS\" #{url} > /dev/null 2>&1")
-            session[:message] = "Successful Login"
-            if session.has_key? :redirect_url
-                redirect_url = session[:redirect_url]
-                session.delete :redirect_url
-                redirect to redirect_url
-            end
-            rec = GSBCore.get_user_record(params[:username])
-            if (rec.nil?)
-                GSBCore.insert_user_record(params[:username],
-                    params[:password])
-            end
+
+    begin
+        GSBCore.login(params['username'], params['password'])
+        session[:message] = "Successful Login"
+        session[:username] = params[:username]
+        session[:password] = params[:password]
+
+        if session.has_key? :redirect_url
+            redirect_url = session[:redirect_url]
+            session.delete :redirect_url
+            redirect to redirect_url
         end
-        redirect url('/')
-    else
-        session[:message] = "Username or Password incorrect"
-        redirect url('/')
+
+    rescue
+        session[:message] = "Incorrect username/password, " + \
+          "or you don't have permission to write to any SVN repositories." 
+        redirect url "/"
     end
 end
 
@@ -302,15 +283,36 @@ end
 post '/newproject' do
     protected!
     usessl!
-    post_newproject(params)
+
+    unless SVN_ROOTS.include? params[:rootdir]
+        return haml :newproject_post, :locals => {:invalid_svn_root => true}
+    end
+
+    githuburl = params[:githuburl].rts
+    segs = githuburl.split("/")
+    gitprojname = segs.pop
+    githubuser = segs.pop
+    svndir = params[:svndir]
+    rootdir = params[:rootdir]
+    conflict = params[:conflict]
+
+
+    begin
+        GSBCore.new_bridge(githuburl, githubuser, svndir, rootdir, conflict)
+        return haml :newproject_post, :locals => {:dupe_repo => false, :collab_ok => true}
+    rescue Exception => ex
+        if ex.message =~ "dupe_repo"
+            return   haml :newproject_post, :locals => {:dupe_repo => true, :collab_ok => true}
+        else
+        end
+    end
 end
 
-def post_newproject(params) 
+def post_newproject_old(params) 
     puts2 "in post handler for newproject"
     dupe_repo = dupe_repo?(params)
     if dupe_repo
         puts2 "dupe_repo is TRUE!!!!"
-        haml :newproject_post, :locals => {:dupe_repo => true, :collab_ok => true}
     else
         puts2 "dupe_repo is FALSE!!!"
         # do stuff
