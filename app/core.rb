@@ -245,13 +245,25 @@ EOF
 
 
 
-    def GSBCore.handle_git_push(gitpush)
-        repository = gitpush['repository']['url'].rts
+    def GSBCore.handle_git_push(push)
+        repository = push["repository"]["url"] #.rts?
+
+        if push.has_key? "zen"
+            puts2 "responding to ping"
+            return "#{obj["zen"]} Wow, that's pretty zen!"
+        end
+
+        if push.has_key? "ref" and push["ref"] != "refs/heads/master"
+            return "ignoring push to refs other than refs/heads/master"
+        end
+
         monitored_repos = []
         repos, local_wc, owner, email, password, encpass = nil
         bridge = get_bridge_from_github_url(repository)
-        return if bridge.nil?
-        repos = repository
+        if bridge.nil?
+            return "There is no bridge for this repos."
+        end
+
         local_wc = bridge[:local_wc]
         owner = bridge[:svn_username]
         email = bridge[:email]
@@ -260,95 +272,66 @@ EOF
         svn_repos = bridge[:svn_repos]
 
         # start locking here
-        wdir = "#{ENV['HOME']}/biocsync/#{local_wc}"
+        wdir = "#{ENV['HOME']}/biocsync/git/#{local_wc}"
         #lockfile = get_lock_file_name(wdir)
         lockfile = get_lock_file_name(svn_repos)
         commit_msg = nil
-        File.open(lockfile, File::RDWR|File::CREAT, 0644) {|f|
-            f.flock(File::LOCK_EX)
+        GSBCore.lock(lockfile) do
             Dir.chdir(wdir) do
-                commit_id = nil
-                run("git checkout master")
-                result = run("git pull")
-                if (result.first.exitstatus == 0)
-                    puts2 "no problems with git pull!"
-                    if result.last =~ /^Already up-to-date/
-                        puts2("Nothing to do, exiting....")
-                        return
-                    end
-                else
-                    puts2 "problems with git pull, tell the user"
-                    # FIXME tell the user...
-                    return
+                res = run("git --no-pager log HEAD")
+                commit_before_pull = res.last.split("\n").first.split(" ").last
+                res = run("git pull")
+                if res.last.strip == "Already up-to-date."
+                    return "git pull says I'm already up to date."
                 end
-
-                svndirs = Dir.glob(File.join('**','.svn'))
-                unless svndirs.empty?
-                    problem_merging_to = "svn"
-                    merge_error=<<EOF
-Your git repository has .svn files in it. Please remove them 
-before trying to merge with subversion!
-EOF
-                    notify_custom_merge_problem(merge_error,
-                        local_wc, email, problem_merging_to)
-                end
-
-                run("git checkout local-hedgehog")
-                commit_msg=<<"EOF"
+                res = run("git checkout master") # just to be safe
+                res = GSBCore.run(%Q(git --no-pager log --pretty=format:"Commit id: %H%nCommit message: %s%n%b%nCommitted by: %cn%nAuthor Name: %an%nCommit date: %ci%nAuthor date: %ai%n" #{commit_before_pull}..HEAD))
+                commits_for_push = res.last.gsub(/\n\nCommitted by:/, "\nCommitted by:")
+                num_commits = 0
+                commits_for_push.split("\n").find_all {|i| num_commits += 1 if  i =~ /^Commit id: /}
+                pl = num_commits > 1 ? "s" : ""
+                commit_message =<<"EOT"
 Commit made by the Bioconductor Git-SVN bridge.
-Consists of #{gitpush['commits'].length} commit(s).
+Consists of #{num_commits} commit#{pl}.
 
 Commit information:
 
-EOF
-                for commit in gitpush['commits']
-                    author = commit['author']
-                    commit_msg+=<<"EOF"
-    Commit id: #{commit['id']}
-    Commit message: 
-    #{commit['message'].gsub(/\n/, "\n    ")}
-    Committed by #{author['name']} <#{author['email'].sub("@", " at ")}>
-    Commit date: #{commit['timestamp']}
-    
-EOF
-                end
-                puts2("git commit message is:\n#{commit_msg}")
-                ###result = run %Q(git merge -m "#{eq(commit_msg)}" --commit --no-ff master)
-                run %Q(git merge --no-ff  -m "#{eq(commit_msg)}" master)
-                #result = run("git merge master")
-                if (result.first == 0)
-                    puts2 "no problems with git merge"
-                else
-                    puts2 "problems with git merge, tell user"
-                    # tell the user
-                    # FIXME - this failure isn't reported?
-                    return
-                end
-                run("git commit -m 'make this a better message'")                
-                # FIXME customize the message so --add-author-from actually works
-                puts2 "before system"
-                #run("git svn dcommit --add-author-from --username #{owner}")
-                res = nil
-                GSBCore.lock() do
-                    cache_credentials(owner, password)
-    ###                res = system2(password, "git svn rebase --username #{owner}", true)
-                    res = system2(password, "git svn dcommit --no-rebase --add-author-from --username #{owner}",
-                        true)
-                end
-                puts2 "after system"
-                if (success(res) and !commit_id.nil?)
-                    commit_ids_file = "#{APP_ROOT}/data/git_commit_ids.txt"
-                    FileUtils.touch(commit_ids_file)
-                    f = File.open(commit_ids_file, "a")
-                    puts2("trying to break circle on #{commit_id}")
-                    f.puts commit_id
-                end
+#{commits_for_push}
+EOT
 
-
-                puts2 "i'm still here..."
             end
-        }
-    end
+
+            svn_wdir = "#{ENV['HOME']}/biocsync/svn/#{local_wc}"
+            Dir.chdir svn_wdir do
+                # just to be safe, do an svn up.
+                # we should be moderately concerned if this pulls down anything new.
+                res = system2(password, "svn up #{svnflags(owner)}")
+                if res.last.split("\n").length > 1
+                    puts2 "svn up (in handle_git_push()) pulled down new content!"
+                end
+                diff = get_diff(wdir, svn_wdir)
+                begin
+                    resolve_diff wdir, svn_wdir, diff, "svn"
+                    svn_commit(svn_wdir, commit_comment)
+                rescue Exception => ex
+                    if ex.message =~ /^Failed to git/
+                        return "failed to 'git rm' an item"
+                    elsif ex.message =~ /^Failed to svn/
+                        return "failed to 'svn delete an item"
+                    elsif ex.message == "svn_commit_failed"
+                        return "svn commit failed"
+                    else
+                        return "unknown error"
+                    end
+                    # FIXME should probably do some more cleanup here?
+                    # svn revert things to where they were before we 
+                    # tried to resolve_diff?
+                end
+            end
+        end # lock
+
+        "received"
+    end # handle_git_push
 
 
     def GSBCore.eq(input)
@@ -633,7 +616,7 @@ EOF
                         res = run("git branch")
                         repo_is_empty = true if res.last.empty?
                         if repo_is_empty
-                            if conflict = "git-wins"
+                            if conflict == "git-wins"
                                 # we could raise an error here, but let's
                                 # just do what they meant to do
                                 conflict = "svn-wins"

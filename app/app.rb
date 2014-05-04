@@ -177,7 +177,8 @@ post '/git-push-hook' do
     # DON'T specify usessl! here!
     # make sure the request comes from one of these IP addresses:
     # 204.232.175.64/27, 192.30.252.0/22. (or is us, testing)
-    unless request.ip =~ /^204\.232\.175|^192\.30\.252|^140\.107|23\.23\.227\.214/
+    unless request.ip =~ 
+        /^204\.232\.175|^192\.30\.252|^140\.107|23\.23\.227\.214|^127\.0\.0\.1$/
         puts2 "/git-push-hook: got a request from an invalid ip (#{request.ip})"
         return "You don't look like github to me."
     end
@@ -188,24 +189,22 @@ post '/git-push-hook' do
 
     # FIXME you could do more checking on the format of params[:payload]
     push = nil
+    repos = nil
     begin
         push = params[:payload]
+        repos = push["repository"]["url"].rts
     rescue
         msg = "malformed push payload"
         push2 msg
         return msg
     end
-    log = open("data/gitpushes.log", "a")
-    log.puts push
-    log.close
-    # FIXME trap error here
 
-
-
-    unless params.has_key? 'payload'
-        puts2 "no 'payload' key, probably a bad payload"
-        return "sorry"
+    begin
+        return GSBCore.handle_git_push(push)
+    rescue
     end
+
+
 
     gitpush = JSON.parse(params["payload"])
     if gitpush.has_key? "zen"
@@ -213,28 +212,12 @@ post '/git-push-hook' do
         return "#{obj["zen"]} Wow, that's pretty zen!"
     end
 
-
-    ## make sure we're not in a vicious circle...
-
-    commits = gitpush["commits"]
-    ids = commits.map {|i| i["id"]}
-
-    commit_ids_file = "#{APP_ROOT}/data/git_commit_ids.txt"
-    if File.file?(commit_ids_file)
-        File.readlines(commit_ids_file).each do |line|
-            line.chomp!
-            if ids.include? line
-                puts2("We have already seen this git commit before!")
-                puts2("Exiting from the vicious circle.")
-                puts2("(commit id was #{line})")
-                return
-            end
-        end
+    if gitpush.has_key? "ref" and gitpush["ref"] != "refs/heads/master"
+        return "ignoring push to refs other than refs/heads/master"
     end
 
 
-    handle_git_push(gitpush)
-    "received"
+
 end
 
 get '/' do
@@ -315,7 +298,8 @@ post '/newproject' do
         elsif ex.message == "bad_collab"
             return haml :newproject_post, :locals => {:dupe_repo => false, :collab_ok => false}
         elsif ex.message == "no_master_branch_in_non_empty_git_repo"
-            return haml :newproject_post, :locals => {:no_master_branch_in_non_empty_git_repo,
+            return haml :newproject_post, :locals => {
+                :no_master_branch_in_non_empty_git_repo => true,
                 :message => "Non-empty Git repository must have a master branch!"}
         else
             return haml :newproject_post, :locals => {:other_error => true}

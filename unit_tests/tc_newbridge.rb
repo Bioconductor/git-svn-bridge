@@ -172,8 +172,13 @@ class TestNewBridge < Test::Unit::TestCase
         GSBCore.new_bridge(@gitrepo, @svnrepo, "git-wins",
             $config['test_username'], $config['test_username'],
             $config['test_email'])
-
-        
+        local_wc = GSBCore.get_wc_dirname @svnrepo
+        Dir.chdir "#{ENV['HOME']}/biocsync" do
+            diff = GSBCore.get_diff "svn/#{local_wc}", "git/#{local_wc}"
+            assert_nil diff
+            diff = GSBCore.get_diff "git/#{local_wc}", "svn/#{local_wc}"
+            assert_nil diff
+        end
     end
 
 end
