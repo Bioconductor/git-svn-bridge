@@ -158,6 +158,24 @@ class TestNewBridge < Test::Unit::TestCase
         db.execute("delete from bridges where svn_repos = ?", "dupetest")
     end
 
+    def setup2
+        Dir.chdir @ext_svn_wc do
+            `svn export --username readonly --password readonly --no-auth-cache --non-interactive https://hedgehog.fhcrc.org/bioconductor/trunk/madman/Rpacks/RGalaxy`
+            `svn add *`
+            `svn ci -m 'add rgalaxy package'`
+        end
+    end
+
+    def test_newbridge_2
+        setup2
+
+        GSBCore.new_bridge(@gitrepo, @svnrepo, "git-wins",
+            $config['test_username'], $config['test_username'],
+            $config['test_email'])
+
+        
+    end
+
 end
 
 

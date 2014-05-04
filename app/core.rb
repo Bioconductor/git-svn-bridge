@@ -375,7 +375,6 @@ EOF
 
 
     def GSBCore.update_user_record(username, password, email)
-        puts "\n\n\n\n\n IN update_user_record!\n\n\n\n\n"
         row = get_user_record(username)
         return if row.nil? # this should not happen
         newrow = row.dup
@@ -450,7 +449,6 @@ EOF
 
 
     def GSBCore.create_db()
-        puts "\n\n\n\n\n\n\nIN CREATEDB!\n\n\n\n\n\n"
         db = SQLite3::Database.new DB_FILE
         db.execute_batch <<-EOF
             create table bridges (
@@ -474,7 +472,6 @@ EOF
 
 
     def GSBCore.get_db()
-        "\n\n\n\n\n\n\nIN GETDB!\n\n\n\n\n\n"
         if File.exists? DB_FILE
             db = SQLite3::Database.new DB_FILE
             res = db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='bridges';")
@@ -635,7 +632,13 @@ EOF
                         repo_is_empty = false
                         res = run("git branch")
                         repo_is_empty = true if res.last.empty?
-                        unless repo_is_empty
+                        if repo_is_empty
+                            if conflict = "git-wins"
+                                # we could raise an error here, but let's
+                                # just do what they meant to do
+                                conflict = "svn-wins"
+                            end
+                        else
                             if res.last =~ / master\n/
                                 run("git checkout master")
                             else
@@ -668,7 +671,6 @@ EOF
                 end
             end
 
-            puts "\n\n\n\n\nnAAAAAAAAA\n\n\n\n\n"
             update_user_record(username, password, email)
             user_id = get_user_id(username)
             add_bridge_record(svnurl, local_wc, githuburl, user_id)
@@ -825,7 +827,7 @@ EOF
             # copy
 
             if File.directory? "#{src}/#{item}"
-                FileUtils.mkdir "#{dest}/#{item}"
+                res = run("rsync -a --exclude=.svn --exclude=.git #{src}/#{item}/ #{dest}/#{item}")
             else
                 FileUtils.cp "#{src}/#{item}", "#{dest}/#{item}"
             end

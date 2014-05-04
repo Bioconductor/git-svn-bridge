@@ -4,7 +4,10 @@ require 'pp'
 require 'net/https'
 require 'uri'
 
+$script = false
+
 if __FILE__ == $0
+    $script = true
     if ARGV.length  < 3
         puts "usage: #{$0} authfile username password [true]"
         exit
@@ -42,7 +45,7 @@ def auth(authfile, username, password, return_urls=false)
             #pp groups
             group_mode = false
             if groups.empty?
-                puts "#{username} is not in any groups"
+                puts "#{username} is not in any groups" if $script
                 return false
             end
         end
@@ -68,13 +71,13 @@ def auth(authfile, username, password, return_urls=false)
     end
 
     if valid_urls.empty?
-        puts "#{username} is not in any groups with write privileges"
+        puts "#{username} is not in any groups with write privileges" if $script
         return false
     end
 
     if return_urls
-        puts "returning urls:"
-        pp valid_urls
+        puts "returning urls:" if $script
+        pp valid_urls if $script
         return valid_urls
     end
 
@@ -92,10 +95,10 @@ def auth(authfile, username, password, return_urls=false)
     #puts response.body
 
     if response.code =~ /^2/
-        puts "congrats, you are valid"
+        puts "congrats, you are valid" if $script
         return true
     else
-        puts "invalid, code is #{response.code}"
+        puts "invalid, code is #{response.code}" if $script
         return false
     end
 
