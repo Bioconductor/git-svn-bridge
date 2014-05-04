@@ -16,6 +16,10 @@ require 'open3'
 require 'sqlite3'
 require 'net/http'
 
+def debug?
+    ENV['TESTING_GSB'] == true
+end
+
 
 APP_ROOT = File.expand_path(File.dirname(__FILE__))
 SVN_URL="https://hedgehog.fhcrc.org/bioconductor"
@@ -24,7 +28,6 @@ f = File.open("#{APP_ROOT}/etc/key")
 key = f.readlines.first.chomp
 f.close
 $gost = Crypt::Gost.new(key)
-
 
 DB_FILE =  ENV['TESTING_GSB'] == 'true' ? "#{APP_ROOT}/data/unittest.sqlite3" :
      "#{APP_ROOT}/data/gitsvn.sqlite3"
@@ -363,13 +366,16 @@ EOF
 
 
     def GSBCore.get_user_id(username)
-        get_db().get_first_row("select rowid from users where svn_username = ?",
-            username).first
+        row = get_db().get_first_row("select rowid from users where svn_username = ?",
+            username)
+        raise "unknown user: #{username}" if row.nil?
+        row.first
     end
 
 
 
     def GSBCore.update_user_record(username, password, email)
+        puts "\n\n\n\n\n IN update_user_record!\n\n\n\n\n"
         row = get_user_record(username)
         return if row.nil? # this should not happen
         newrow = row.dup
@@ -421,7 +427,6 @@ EOF
     end
 
 
-
     def GSBCore.get_bridge_from_github_url(github_url)
         get_bridge("github_url", github_url)
     end
@@ -445,6 +450,7 @@ EOF
 
 
     def GSBCore.create_db()
+        puts "\n\n\n\n\n\n\nIN CREATEDB!\n\n\n\n\n\n"
         db = SQLite3::Database.new DB_FILE
         db.execute_batch <<-EOF
             create table bridges (
@@ -468,8 +474,12 @@ EOF
 
 
     def GSBCore.get_db()
+        "\n\n\n\n\n\n\nIN GETDB!\n\n\n\n\n\n"
         if File.exists? DB_FILE
-            SQLite3::Database.new DB_FILE
+            db = SQLite3::Database.new DB_FILE
+            res = db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='bridges';")
+            return create_db() if res.empty?
+            db
         else
             create_db()
         end
@@ -592,7 +602,7 @@ EOF
     end
 
 
-    def GSBCore.new_bridge(githuburl, svnurl, conflict, username, password)
+    def GSBCore.new_bridge(githuburl, svnurl, conflict, username, password, email)
         if dupe_repo?(svnurl)
             raise "dupe_repo"
         end
@@ -629,8 +639,7 @@ EOF
                             if res.last =~ / master\n/
                                 run("git checkout master")
                             else
-                                # repo is not empty but there is no master branch.
-                                # what to do?
+                                raise "no_master_branch_in_non_empty_git_repo"
                             end
                         end
                     end
@@ -658,8 +667,46 @@ EOF
                     svn_commit(dest, "setting up git-svn bridge")
                 end
             end
+
+            puts "\n\n\n\n\nnAAAAAAAAA\n\n\n\n\n"
+            update_user_record(username, password, email)
+            user_id = get_user_id(username)
+            add_bridge_record(svnurl, local_wc, githuburl, user_id)
+
+
         end
 
+    end
+
+    def GSBCore.delete_bridge(local_wc)
+        get_db().execute("delete from bridges where local_wc = ?", local_wc)
+        Dir.chdir "#{ENV['HOME']}/biocsync" do
+            FileUtils.rm_rf "git/#{local_wc}"
+            FileUtils.rm_rf "svn/#{local_wc}"
+        end
+    end
+
+    def GSBCore.add_bridge_record(svn_repos, local_wc, github_url, user_id)
+        t = Time.now
+        timestamp = t.strftime "%Y-%m-%d %H:%M:%S.%L"            
+        stmt=<<-EOF
+            insert into bridges 
+                (
+                    svn_repos,
+                    local_wc,
+                    user_id,
+                    github_url,
+                    timestamp
+                ) values (
+                    ?,
+                    ?,
+                    ?,
+                    ?,
+                    ?
+                );
+        EOF
+        get_db().execute(stmt, svn_repos,
+            local_wc, user_id, github_url.rts, timestamp)
     end
 
     # FIXME git pull first?
@@ -763,9 +810,11 @@ EOF
                     end
                 end
             else # svn
-                res = run("svn delete #{item}")
-                unless succcess(res)
-                    raise "Failed to svn delete #{item}!"
+                Dir.chdir dest do
+                    res = run("svn delete #{item}")
+                    unless success(res)
+                        raise "Failed to svn delete #{item}!"
+                    end
                 end
             end
         end

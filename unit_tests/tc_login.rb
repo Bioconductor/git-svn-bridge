@@ -1,3 +1,4 @@
+ENV['TESTING_GSB'] = 'true'
 require "test-unit"
 require "test/unit"
 require_relative "../app/core"
@@ -5,11 +6,14 @@ include GSBCore
 
 require 'yaml'
 
-ENV['TESTING_GSB'] = 'true'
+Test::Unit.at_start do
+    $config = YAML.load_file("#{APP_ROOT}/etc/config.yml")
+end
+
+
 
 class TestLogin < Test::Unit::TestCase
 
-    $config = YAML.load_file("#{APP_ROOT}/etc/config.yml")
 
     def test_login
         assert_nothing_raised do

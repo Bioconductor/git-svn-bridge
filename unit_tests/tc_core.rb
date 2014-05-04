@@ -1,16 +1,16 @@
+ENV['TESTING_GSB'] = 'true'
 require "test-unit"
 require "test/unit"
-require_relative "../app/core"
-include GSBCore
 require 'fileutils'
 require 'tmpdir'
 require 'pp'
+require_relative "../app/core"
+include GSBCore
 
-ENV['TESTING_GSB'] = 'true'
+
 
 
 Test::Unit.at_start do
-    ENV['TESTING_GSB'] = 'true'
     puts "in at_start"
     $tmpdir = Dir.mktmpdir
     puts "$tmpdir = #{$tmpdir}"

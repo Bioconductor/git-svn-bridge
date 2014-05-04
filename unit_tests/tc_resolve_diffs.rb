@@ -1,12 +1,16 @@
+ENV['TESTING_GSB'] = 'true'
 require "test-unit"
 require "test/unit"
-require_relative "../app/core"
-include GSBCore
 require 'fileutils'
 require 'tmpdir'
 require 'pp'
+require_relative "../app/core"
+include GSBCore
 
-ENV['TESTING_GSB'] = 'true'
+
+Test::Unit.at_start do
+    $config = YAML.load_file("#{APP_ROOT}/etc/config.yml")
+end
 
 
 class TestResolveDiffs < Test::Unit::TestCase

@@ -295,11 +295,13 @@ post '/newproject' do
     svndir = params[:svndir]
     rootdir = params[:rootdir]
     conflict = params[:conflict]
+    email = params[:email]
 
     svnurl = "#{rootdir}#{svndir}"
 
     begin
-        GSBCore.new_bridge(githuburl, svnurl, conflict, session[:username], session[:password])
+        GSBCore.new_bridge(githuburl, svnurl, conflict,
+            session[:username], session[:password], email)
         return haml :newproject_post, :locals => {:dupe_repo => false, :collab_ok => true}
     rescue Exception => ex
         if ex.message == "dupe_repo"
@@ -312,9 +314,11 @@ post '/newproject' do
             return haml :newproject_post, :locals => {:invalid_github_repo => true}
         elsif ex.message == "bad_collab"
             return haml :newproject_post, :locals => {:dupe_repo => false, :collab_ok => false}
-
-            
-
+        elsif ex.message == "no_master_branch_in_non_empty_git_repo"
+            return haml :newproject_post, :locals => {:no_master_branch_in_non_empty_git_repo,
+                :message => "Non-empty Git repository must have a master branch!"}
+        else
+            return haml :newproject_post, :locals => {:other_error => true}
         end
     end
 end

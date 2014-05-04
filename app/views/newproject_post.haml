@@ -3,6 +3,11 @@
 -if defined? dupe_repo and dupe_repo
     %p.error
         Whoops, there is already a bridge for this repository.
+-elsif defined? other_error and other_error
+    %p.error
+        An error occurred creating the git-svn bridge.
+-elsif defined? no_master_branch_in_non_empty_git_repo
+    %p.error= message
 -elsif defined? invalid_svn_root and invalid_svn_root
     %p.error
         Invalid SVN root directory.
