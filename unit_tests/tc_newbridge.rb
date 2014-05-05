@@ -12,7 +12,7 @@ include GSBCore
 
 Test::Unit.at_start do
     $config = YAML.load_file("#{APP_ROOT}/etc/config.yml")
-    FileUtils.rm DB_FILE
+    FileUtils.rm_f DB_FILE
     db = GSBCore.get_db
     GSBCore.login($config['test_username'], $config['test_password'])
 end
@@ -166,6 +166,9 @@ class TestNewBridge < Test::Unit::TestCase
         end
     end
 
+
+
+
     def test_newbridge_2
         setup2
 
@@ -180,6 +183,7 @@ class TestNewBridge < Test::Unit::TestCase
             assert_nil diff
         end
     end
+
 
 end
 

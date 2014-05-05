@@ -215,13 +215,21 @@ EOF
     end
 
 
-    def GSBCore.get_monitored_svn_repos_affected_by_commit(rev_num)
-        f = File.open("data/config")
+    def GSBCore.get_monitored_svn_repos_affected_by_commit(rev_num,
+      repos="/extra/svndata/gentleman/svnroot/bioconductor")
+        svnroot = nil
+        default_repos = "/extra/svndata/gentleman/svnroot/bioconductor"
+        if repos == default_repos
+            svnroot = default_repos
+        else
+            svnroot = "file://#{repos}/".sub(/\/\/$/, "/")
+        end
+        f = File.open("#{APP_ROOT}/data/config")
         p = f.readlines().first().chomp
 
         # FIXME - fix this
         cmd = "svn log --xml -v --username pkgbuild --password #{p} --non-interactive " +
-          "-r #{rev_num} --limit 1 https://hedgehog.fhcrc.org/bioconductor/"
+          "-r #{rev_num} --limit 1 #{svnroot}"
         result = `#{cmd}`
         #puts2("after system")
         #result = run(cmd)
@@ -233,14 +241,27 @@ EOF
         end
 
         ret = {}
-        for item in changed_paths
-            repos = get_repos_by_svn_path(item)
-            next if repos.nil?
-            for repo in repos
-                ret[repo] = 1
+
+        if repos == default_repos
+            # FIXME this is not (yet) unit-tested
+            for item in changed_paths
+                repos = get_repos_by_svn_path(item)
+                next if repos.nil?
+                for repo in repos
+                    ret[repo] = 1
+                end
+            end
+        else
+            svn_repos = GSBCore.get_db.execute("select svn_repos from bridges").first
+            raise "no bridges defined!" if svn_repos.nil?
+            for svn_repo in svn_repos
+                if svn_repo == "file://#{repos}"
+                    ret[svn_repo] = 1
+                end
             end
         end
-        ret.keys
+        return ret.keys
+
     end
 
 

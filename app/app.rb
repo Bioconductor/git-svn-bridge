@@ -240,13 +240,11 @@ get '/svn-commit-hook' do
     puts2 "in svn-commit-hook handler"
     repos = params[:repos]
     rev = params[:rev]
-    unless repos == "/extra/svndata/gentleman/svnroot/bioconductor"
+    if (request.ip != "127.0.0.1") and 
+      (repos != "/extra/svndata/gentleman/svnroot/bioconductor")
         return "not monitoring this repo"
     end
-    log = open("data/svncommits.log", "a")
-    log.puts("rev=#{rev}, repos=#{repos}")
-    log.close
-    affected_repos = get_monitored_svn_repos_affected_by_commit(rev)
+    affected_repos = get_monitored_svn_repos_affected_by_commit(rev, repos)
     for repo in affected_repos
         svn_repo, local_wc = repo.split("\t")
         puts2 "got a commit to the repo #{svn_repo}, local wc #{local_wc}"
