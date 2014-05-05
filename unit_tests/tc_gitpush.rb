@@ -83,8 +83,6 @@ class TestGitPush < Test::Unit::TestCase
 
         diff = GSBCore.get_diff @ext_git_wc, @ext_svn_wc
 
-        puts "\n\n\nhere comes diff\n\n\n"
-        pp diff
 
 
     end
@@ -107,6 +105,9 @@ class TestGitPush < Test::Unit::TestCase
             assert( (!File.exists?("bar.txt")), "bar.txt exists but shouldn't!")
 
             assert(File.readlines("foo.txt").last == "another line added to foo.txt")
+
+            log = `svn log -v`
+            assert log =~ /modification, addition, deletion/
         end
 
     end
