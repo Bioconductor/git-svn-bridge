@@ -87,7 +87,7 @@ class TestGitPush < Test::Unit::TestCase
 
     end
 
-    def test_newbridge_0
+    def test_handle_git_push_0
         setup0
 
         mock_push_object = {"repository" => {"url" => @gitrepo}}

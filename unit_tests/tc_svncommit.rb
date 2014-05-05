@@ -87,6 +87,30 @@ class TestSvnCommit < Test::Unit::TestCase
         assert_equal [@svnrepo], res
     end
 
+    def test_handle_svn_commit_0
+        setup0 # reuse
+        revnum = nil
+        Dir.chdir @ext_svn_wc do
+            res = `svn up`
+            revnum = res.split("At revision ").last.strip.sub(".", "")
+        end
+        repo = @svnrepo.sub("file://", "")
+        repos = GSBCore.get_monitored_svn_repos_affected_by_commit(
+            revnum, repo)
+        assert_equal 1, repos.length
+        res = GSBCore.handle_svn_commit(repos.first)
+        assert_equal "success", res
+        Dir.chdir @ext_git_wc do
+            `git pull`
+            log = `git log -n 1`
+            # FIXME why is it indented?
+            assert log =~ /added to foo\.txt/
+            assert log =~ /SVN Revision number: 2/
+            assert log =~ /Consists of 1 commit/
+        end
+
+    end
+
 end
 
 

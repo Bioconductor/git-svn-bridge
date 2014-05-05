@@ -103,7 +103,7 @@ module GSBCore
         repos, local_wc, owner, password, email, encpass, commit_msg = nil
         bridge = get_bridge_from_svn_url(repo)
         pp2 bridge
-        repos = repo.sub(/^#{SVN_URL}/, "")
+        #repos = repo.sub(/^#{SVN_URL}/, "")
         local_wc = bridge[:local_wc]
         owner = bridge[:svn_username]
         svn_repos = bridge[:svn_repos]
@@ -111,89 +111,50 @@ module GSBCore
         encpass = bridge[:encpass]
         password = decrypt(encpass)
         puts2 "owner is #{owner}"
-        res = system2(password, "svn log -v --xml --limit 1 --non-interactive --no-auth-cache --username #{owner} --password \"$SVNPASS\" #{SVN_URL}#{repos}", false)
-        doc = Nokogiri::Slop(res.last)
-        msg = doc.log.logentry.msg.text
-        if (msg =~ /Commit made by the git-svn bridge/)
-            puts2 ("no need for further action")
-            return
-        end
-        wdir = "#{ENV['HOME']}/biocsync/#{local_wc}"
-        #lockfile = get_lock_file_name(wdir, "#{SVN_URL}#{SVN_ROOT}#{repos}")
+        res = system2(password, "svn log -v --xml --limit 1 --non-interactive --no-auth-cache --username #{owner} --password \"$SVNPASS\" #{svn_repos}", false)
+        # doc = Nokogiri::Slop(res.last)
+        # msg = doc.log.logentry.msg.text
+        # if (msg =~ /Commit made by the git-svn bridge/)
+        #     puts2 ("no need for further action")
+        #     return
+        # end
+        wdir = "#{ENV['HOME']}/biocsync/svn/#{local_wc}"
+        destdir = "#{ENV['HOME']}/biocsync/git/#{local_wc}"
         lockfile = get_lock_file_name(svn_repos)
-        File.open(lockfile, File::RDWR|File::CREAT, 0644) {|f|
-            f.flock(File::LOCK_EX)
+        lock(lockfile) do
             Dir.chdir(wdir) do
-                # this might result in: "Already on 'local-hedgehog"; is that OK?
-                result = run("git checkout local-hedgehog")
-                dump = dump = PP.pp(result, "")
-                puts2 "result is #{dump}"
-                project = local_wc
-                direction = "svn2git"
-                port = (request.port == 80) ? "" : ":#{request.port}"
-                url = "#{request.scheme}://#{request.host}#{port}/merge/#{project}/#{direction}"
+                res = system2(password, "svn info #{svnflags(owner)}")
+                old_rev_num = res.last.split("\n").find{|i| 
+                    i =~ /^Revision:/}.sub("Revision: ", "")
 
-                if result.first.exitstatus != 0
-                    puts2 "problem doing git checkout, probably need to resolve conflict"
-                    notify_svn_merge_problem(result.last, project, email, url)
-
-                    # FIXME
-                    # This is a bad hack! really we want to give the user the choice of
-                    # how to deal with the conflict.
-                    # for line in result.last
-                    #     if line =~ /: needs merge/
-                    #         file = line.split(": needs merge").first
-                    #         run("git checkout --theirs #{file}")
-                    #         run("git add #{file}")
-                    #     end
-                    # end
-                    # run("git checkout local-hedgehog")
-
-                    # FIXME let the user know
-                    return
+                res = system2(password, "svn up #{svnflags(owner)}")
+                new_rev_num = 
+                    res.last.split(/At revision |Updated to revision /).last.strip.sub(".", "")
+                if (old_rev_num == new_rev_num)
+                    return "no new svn commits!"
                 end
-                #run("git svn rebase")
-                puts2("before system...")
-                # FIXME this currently returns false but we don't check 
-                # or change behavior accordingly
-                # HEY, that could be important! that could be why repos get hosed?!?
-                GSBCore.lock() do
-                    cache_credentials(owner, password)
-                    res = system2(password, "git svn rebase --username #{owner}", true)
-                    if res.last =~ /^Current branch local-hedgehog is up to date\./
-                        puts2 "Nothing to do, exiting...."
-                        return
-                    end
-                end
-                ##run("git commit -a -m 'meaningless-ish commit here'")
-                puts2("after system...")
-                run("git checkout master")
-                # problem was not detected above (result.first), but here.
-                commit_msg=<<"EOF"
-Commit made by the Bioconductor Git-SVN bridge.
-SVN Revision: #{doc.log.logentry.attributes['revision'].value}
-SVN Author: #{doc.log.logentry.author.text}
-Commit Date: #{doc.log.logentry.date.text}
-Commit Message:
-#{doc.log.logentry.msg.text.gsub("\n", "    \n")}
 
-EOF
-                ####result = run %Q(git merge -m "#{eq(commit_msg)}" --commit --no-ff local-hedgehog)
-                run("git merge local-hedgehog")
-                #if (result.first == 0)
-                if result.first.exitstatus == 0
-                    puts2 "result was true!"
-                    #run("git reset origin/master") #?????
-                    # this must be unnecessary:
-                    ##run("git commit -m 'gitsvn.bioconductor.org auto merge'")
-                    run("git push origin master")
-                else
-                    puts2 "result was false!"
-                    # tell user there was a problem
-                    notify_svn_merge_problem(result.last, local_wc, email, url)
+                range = "#{old_rev_num.to_i + 1}:#{new_rev_num}"
+                res = system2(password, "svn log --xml -r #{range} #{svnflags(owner)}")
+                xml = res.last
+                doc = Nokogiri::XML(xml)
+                logentries = doc.css("logentry")
+                msg = "Commit made by the Bioconductor Git-SVN bridge.\n\n"
+                pl = logentries.length > 1 ? "s" : ""
+                msg += "Consists of #{logentries.length} commit#{pl}.\n\n"
+                msg += "Commit information:\n\n"
+                for logentry in logentries
+                    msg += "SVN Revision number: #{logentry.attribute("revision").value}\n"
+                    msg += "Commit message:\n#{logentry.css("msg").text}\n"
+                    msg += "Committed by #{logentry.css("author").text}\n"
+                    msg += "Committed at: #{logentry.css("date").text}\n\n"
                 end
-            end 
-        }
+                diff = get_diff(wdir, destdir)
+                resolve_diff(wdir, destdir, diff, "git")
+                git_commit_and_push(destdir, msg)
+                return "success"
+            end
+        end
     end
 
 
@@ -744,9 +705,6 @@ EOT
 
     def GSBCore.svnflags(username)
         " --username #{username} --password $SVNPASS --non-interactive --no-auth-cache "
-    end
-
-    def GSBCore.handle_svn_commit()
     end
 
     def GSBCore.check_for_svn_updates()
