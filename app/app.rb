@@ -54,7 +54,6 @@ SVN_ROOTS=roots.split("\n")
 DOC_URL="http://bioconductor.org/developers/how-to/git-svn/"
 
 
-SVN_URL="https://hedgehog.fhcrc.org/bioconductor"
 
 # For development, set this to /trunk/madman/RpacksTesting;
 # In production, set to /trunk/madman/Rpacks.
@@ -141,6 +140,7 @@ post '/login' do
         session[:message] = "Successful Login"
         session[:username] = params[:username]
         session[:password] = params[:password]
+        redirect url "/"
 
         if session.has_key? :redirect_url
             redirect_url = session[:redirect_url]
@@ -256,7 +256,8 @@ end
 get '/newproject' do
     protected!
     usessl!
-    haml :newproject
+    is_testing = request.ip == "127.0.0.1"
+    haml :newproject, :locals => {:is_testing => is_testing}
 end
 
 
@@ -271,15 +272,13 @@ post '/newproject' do
     end
 
     githuburl = params[:githuburl].rts
-    # segs = githuburl.split("/")
-    # gitprojname = segs.pop
-    # githubuser = segs.pop
     svndir = params[:svndir]
     rootdir = params[:rootdir]
     conflict = params[:conflict]
     email = params[:email]
 
     svnurl = "#{rootdir}#{svndir}"
+
 
     begin
         GSBCore.new_bridge(githuburl, svnurl, conflict,
@@ -306,243 +305,6 @@ post '/newproject' do
     end
 end
 
-def post_newproject_old(params) 
-    puts2 "in post handler for newproject"
-    dupe_repo = dupe_repo?(params)
-    if dupe_repo
-        puts2 "dupe_repo is TRUE!!!!"
-    else
-        puts2 "dupe_repo is FALSE!!!"
-        # do stuff
-        githuburl = params[:githuburl].rts
-        segs = githuburl.split("/")
-        gitprojname = segs.pop
-        githubuser = segs.pop
-        svndir = params[:svndir]
-        rootdir = params[:rootdir]
-        conflict = params[:conflict]
-
-        # sanity checks:
-
-
-        unless SVN_ROOTS.include? rootdir
-            return haml :newproject_post, :locals => {:invalid_svn_root => true}
-        end
-
-        # verify that svn repos exists and user has read permissions on it
-        svnurl = "#{rootdir}#{svndir}"
-        local_wc = get_wc_dirname(svnurl)
-        result = system2(session[:password],
-            "svn log --non-interactive --no-auth-cache --username #{session[:username]} --password \"$SVNPASS\" --limit 1 #{svnurl}")
-        if result.first != 0 # repos does not exist or user does not have read privs
-            return haml :newproject_post, :locals => {:svn_repo_error => true}
-        end
-
-        # verify that user has write permission to the SVN repos
-        auth_urls = auth("etc/bioconductor.authz", session[:username], session[:password], true)
-        write_privs = false
-        if auth_urls.is_a? Array
-            lookfor = "#{rootdir}#{svndir}".sub(/^#{SVN_URL}/, "")
-            for auth_url in auth_urls
-                if lookfor =~ /^#{auth_url}/
-                    write_privs = true
-                    break
-                end
-            end
-        else
-            write_privs = false
-        end
-
-        unless write_privs # no write privs to specified svn dir
-            return haml :newproject_post, :locals => {:no_write_privs => true}
-        end
-
-        # verify that github url exists
-
-        url = URI.parse(githuburl)
-        req = Net::HTTP.new(url.host, url.port)
-        req.use_ssl = true
-        res = req.request_head(url.path)
-        unless res.code =~ /^2/ # github repo not found
-            return haml :newproject_post, :locals => {:invalid_github_repo => true}
-        end
-
-        # end sanity checks. 
-        
-        update_user_record(session[:username], session[:password],
-            params[:email])
-        user_id = get_user_id(session[:username])
-
-        data = URI.parse("https://api.github.com/repos/#{githubuser}/#{gitprojname}/collaborators").read
-        obj = JSON.parse(data)
-        ok = false
-        for item in obj
-            if item.has_key? "login" and item["login"] == 'bioc-sync'
-                ok = true
-                break
-            end
-        end
-        unless ok
-            puts2 "oops, collaboration is not set up properly"
-            haml :newproject_post, :locals => {:dupe_repo => false, :collab_ok => false}
-        else
-
-            # FIXME - what if git and svn project names differ?
-            # fixme - make sure both repos are valid
-            git_ssh_url = "git@github.com:#{githubuser}/#{gitprojname}.git"
-
-            lockfile = get_lock_file_name(svnurl)
-            File.open(lockfile, File::RDWR|File::CREAT, 0644) {|f|
-                f.flock(File::LOCK_EX)
-                Dir.chdir("#{ENV['HOME']}/biocsync") do
-                    FileUtils.rm_rf local_wc # just in case
-                    result = run("git clone #{git_ssh_url} #{local_wc}")
-                    #res = system2(session[:password],
-                    #    "svn export --non-interactive --username #{session[:username]} --password \"$SVNPASS\" #{SVN_URL}#{SVN_ROOT}/#{svndir}")
-                    Dir.chdir(local_wc) do
-                        filelist = run("git ls-files")
-                        unless filelist.last.empty?
-                            result = run("git branch -r")
-                            lines = result.last.gsub(/ +/, "").split("\n")
-                            unless lines.include? 'origin/master'
-                                puts2 "oops, no remote master branch"
-                                return(haml(:newproject_post, :locals => {:no_master => true}))
-                            end
-                        end
-                        run("git checkout master")
-                        repo_is_empty = `git branch`.empty?
-                        res = system2(session[:password],
-                            "svn log --non-interactive --limit 1 --username #{session[:username]} --password \"$SVNPASS\" #{rootdir}#{svndir}")
-
-                        run("git config --add svn-remote.hedgehog.url #{rootdir}#{svndir}")
-                        res = system2(session[:password],
-                            "svn log --non-interactive --limit 1 --username #{session[:username]} --password \"$SVNPASS\" #{rootdir}#{svndir}")
-                        run("git config --add svn-remote.hedgehog.fetch :refs/remotes/hedgehog")
-                        exclusive_lock() do
-                            cache_credentials(session[:username], session[:password])
-                            res = system2(session[:password],
-                                "git svn fetch --username #{session[:username]} hedgehog -r HEAD",
-                                true)
-                            puts2 "res:"
-                            pp2 res
-                        end
-                        # see http://stackoverflow.com/questions/19712735/git-svn-cannot-setup-tracking-information-starting-point-is-not-a-branch
-                        #run("git checkout -b local-hedgehog -t hedgehog")
-                        run("git checkout hedgehog")
-                        run("git checkout -b local-hedgehog")
-                        # adding these two (would not be necessary in older git)
-                        run("git config --add branch.local-hedgehog.remote .")
-                        run("git config --add branch.local-hedgehog.merge refs/remotes/hedgehog")
-                        # need password here?
-                        exclusive_lock() do
-                            cache_credentials(session[:username], session[:password])
-                            system2(session[:password], "git svn rebase --username #{session[:username]} hedgehog")
-                        end
-
-                        ["master", 'local-hedgehog'].each do |branch|
-                            run("git checkout #{branch}")
-                            svndirs = Dir.glob(File.join('**','.svn'))
-                            unless svndirs.empty?
-                                puts2 "oops, collaboration is not set up properly"
-                                return(haml(:newproject_post, :locals => {:svnfiles => true, :branch => branch}))
-                            end
-                        end
-
-                        branchtomerge, branchtogoto = nil
-                        conflict = "svn-wins" if repo_is_empty
-                        if conflict == "git-wins"
-                            branchtogoto = "local-hedgehog"
-                            branchtomerge = "master"
-                        elsif conflict == "svn-wins"
-                            branchtogoto = "master"
-                            branchtomerge = "local-hedgehog"
-                        else
-                            # we're in trouble!
-                        end
-
-
-                        run("git checkout #{branchtogoto}")
-
-
-
-                        result = run("git merge #{branchtomerge}")
-
-                        if (result.first != 0)
-                            puts2("the merge failed")
-                            conflict_files = `git diff --name-only --diff-filter=U`.split("\n")
-
-
-                            for file in conflict_files
-                                run("git checkout --theirs #{file}")
-                                run("git add #{file}")
-                            end
-                            # need this?
-                            #run("git add .")
-                            run("git commit -m 'conflicts resolved while setting up Git-SVN bridge'")
-
-                        else
-                            puts2("the merge succeeded")
-                        end
-
-                        if branchtogoto == "master"
-                            run("git push origin master")
-                        else
-                            exclusive_lock() do
-                                cache_credentials(session[:username], session[:password])
-                                res = system2(session[:password],
-                                    "git svn dcommit --no-rebase --add-author-from --username #{session[:username]}",
-                                    true)
-                            end
-                        end
-
-
-                        # after merging...
-                        if (branchtogoto == "local-hedgehog")
-                            run("git checkout master")
-                        end
-
-
-
-
-
-
-                    end
-                end
-            }
-
-            # FIXME should we sleep for a couple seconds here?
-            # to make sure that the push finishes before we register our interest in this
-            # repos. Not urgent, since we wouldn't act on this push anyway, but it would
-            # clean things up. NB. sometimes we don't see the expected push hook action
-            # here.
-
-            svn_repos = ""
-            t = Time.now
-            timestamp = t.strftime "%Y-%m-%d %H:%M:%S.%L"            
-            stmt=<<-EOF
-                insert into bridges 
-                    (
-                        svn_repos,
-                        local_wc,
-                        user_id,
-                        github_url,
-                        timestamp
-                    ) values (
-                        ?,
-                        ?,
-                        ?,
-                        ?,
-                        ?
-                    );
-            EOF
-            get_db().execute(stmt, "#{rootdir}#{svndir}",
-                local_wc, user_id, params[:githuburl].rts, timestamp)
-
-            
-            haml :newproject_post, :locals => {:dupe_repo => false, :collab_ok => true}
-        end 
-    end
-end
 
 get '/test/:name' do
     unless logged_in?
@@ -606,12 +368,10 @@ end
 get '/delete_bridge' do
     protected!
     usessl!
+
     query = "select local_wc from bridges where rowid = ?"
-    local_wc = get_db().get_first_row(query, params[:bridge_id]).first
-    dir_to_delete = "#{ENV['HOME']}/biocsync/#{local_wc}"
-    res = FileUtils.rm_rf "#{ENV['HOME']}/biocsync/#{local_wc}"
-    query = "delete from bridges where rowid = ?"
-    get_db.execute(query, params[:bridge_id])
+    local_wc = GSBCore.get_db().get_first_row(query, params[:bridge_id]).first
+    GSBCore.delete_bridge(local_wc)
     haml :delete_bridge
 end
 

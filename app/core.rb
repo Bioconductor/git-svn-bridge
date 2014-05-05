@@ -452,10 +452,10 @@ EOT
     def GSBCore.puts2(arg)
         puts(arg)
         STDOUT.flush
-        if (ENV["RUNNING_SINATRA"] == "true")
-            STDERR.puts(arg)
-            STDERR.flush
-        end
+        # if (ENV["RUNNING_SINATRA"] == "true")
+        #     STDERR.puts(arg)
+        #     STDERR.flush
+        # end
     end
 
     def GSBCore.pp2(arg)
