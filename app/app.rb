@@ -190,6 +190,7 @@ post '/git-push-hook' do
     # FIXME you could do more checking on the format of params[:payload]
     push = nil
     repos = nil
+
     begin
         push = params[:payload]
         repos = push["repository"]["url"].rts

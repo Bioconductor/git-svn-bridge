@@ -277,6 +277,7 @@ EOF
         lockfile = get_lock_file_name(svn_repos)
         commit_msg = nil
         GSBCore.lock(lockfile) do
+            commit_message = nil
             Dir.chdir(wdir) do
                 res = run("git --no-pager log HEAD")
                 commit_before_pull = res.last.split("\n").first.split(" ").last
@@ -312,7 +313,7 @@ EOT
                 diff = get_diff(wdir, svn_wdir)
                 begin
                     resolve_diff wdir, svn_wdir, diff, "svn"
-                    svn_commit(svn_wdir, commit_comment)
+                    svn_commit(svn_wdir, commit_message)
                 rescue Exception => ex
                     if ex.message =~ /^Failed to git/
                         return "failed to 'git rm' an item"
@@ -725,11 +726,6 @@ EOT
     end
 
     def GSBCore.handle_svn_commit()
-    end
-
-    def GSBCore.handle_git_push()
-        # make a note of most recent commit 
-        # pull (only master if possible)
     end
 
     def GSBCore.check_for_svn_updates()
