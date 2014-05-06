@@ -15,6 +15,7 @@ require 'tmpdir'
 require 'open3'
 require 'sqlite3'
 require 'net/http'
+require 'find'
 
 def debug?
     ENV['TESTING_GSB'] == true
@@ -78,7 +79,30 @@ module GSBCore
         end
     end
 
+    def GSBCore.get_git_ignored_items(wc_dir)
+        Dir.chdir wc_dir do
+            unless File.exists? ".gitignore"
+                return []
+            end
+            res = run("git ls-files --others --exclude-from=.gitignore")
+            dont_ignore = res.last.split "\n"
+            ignore = []
+            Find.find wc_dir do |path|
+                path.sub! /^\.\//, ""
+                next if path == "." or path == ".."
+                next if path =~ /^\.git/
+                # if File.directory? File.basename(path) and
+                #   Dir.entries(File.basename(path)).length == 2
+                #     ignore.push path
+                # end
+                if (!dont_ignore.include? path)
+                    ignore.push path
+                end
 
+            end
+            ignore.uniq
+        end
+    end
 
     def GSBCore.encrypt(input)
         encrypted = $gost.encrypt_string(input)
