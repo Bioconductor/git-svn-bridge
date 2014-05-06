@@ -759,6 +759,30 @@ EOT
             return
         end
         src_vcs = dest_vcs == "git" ? "svn" : "git"
+
+        rsync_src = "#{src}/".sub(/\/\/$/, "/")
+        adds = diff[:to_be_copied] + diff[:to_be_added]
+        ignored = []
+        for item in adds
+
+        end
+
+
+# dante@klediment ~ $ svn co file://`pwd`/svn-repo wc1
+# A    wc1/foo
+# Checked out revision 1.
+# dante@klediment ~ $ cd wc1
+# dante@klediment ~/wc1 $ svn propset svn:ignore *.class .
+# property 'svn:ignore' set on '.'
+# dante@klediment ~/wc1 $ touch foo.class
+# dante@klediment ~/wc1 $ svn status --no-ignore
+#  M      .
+# I       foo.class
+# dante@klediment ~/wc1 $ svn status
+#  M      .
+        
+
+        res = run("rsync -a --delete --exclude=.svn --exclude=.git #{rsync_src} #{dest}")
         for item in diff[:to_be_deleted]
             if dest_vcs == "git"
                 gitname = gitname(item)
