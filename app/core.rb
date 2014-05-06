@@ -820,6 +820,16 @@ EOT
             else # svn
                 Dir.chdir dest do
                     if diff[:to_be_added].include? item
+                        res = run("svn status --no-ignore #{item}")
+                        if res.last =~ /^I/
+                            puts2 "svn says to ignore #{item}"
+                            if File.directory? item
+                                FileUtils.rm_rf item
+                            else
+                                FileUtils.rm item
+                            end
+                            next
+                        end
                         res = run("svn add #{item}")
                         unless success(res)
                             raise "Failed to svn add #{item}!"

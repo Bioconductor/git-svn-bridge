@@ -4,6 +4,7 @@ require "test/unit"
 require 'fileutils'
 require 'tmpdir'
 require 'pp'
+require 'yaml'
 require_relative "../app/core"
 include GSBCore
 
@@ -162,5 +163,31 @@ class TestResolveDiffs < Test::Unit::TestCase
             assert_equal diff2, diff
         end
     end
+
+    def setup_repos_4
+        Dir.chdir @git_testrepo do
+            `touch foo.class`
+            `git add foo.class`
+            `git commit -m 'adding foo.class'`
+            `git push`
+        end
+        Dir.chdir @svn_testrepo do
+            `svn propset svn:ignore -R *.class .`
+        end
+    end
+
+
+    def test_resolve_diff_4 # test that svn ignores are honored
+        setup_repos_4
+        Dir.chdir @tmpdir do
+            diff = GSBCore.get_diff("git/testrepo", "svn/testrepo")
+            # expected = {:to_be_added=>["badpat1"], :to_be_deleted=>[], :to_be_copied=>[]}
+            # assert_equal expected, diff
+            GSBCore.resolve_diff(@git_testrepo, @svn_testrepo, diff, "svn")
+            diff2 = GSBCore.get_diff(@svn_testrepo, @git_testrepo)
+            # assert_equal diff2, diff
+        end
+    end
+
 end
 
