@@ -181,11 +181,9 @@ class TestResolveDiffs < Test::Unit::TestCase
         setup_repos_4
         Dir.chdir @tmpdir do
             diff = GSBCore.get_diff("git/testrepo", "svn/testrepo")
-            # expected = {:to_be_added=>["badpat1"], :to_be_deleted=>[], :to_be_copied=>[]}
-            # assert_equal expected, diff
             GSBCore.resolve_diff(@git_testrepo, @svn_testrepo, diff, "svn")
             diff2 = GSBCore.get_diff(@svn_testrepo, @git_testrepo)
-            # assert_equal diff2, diff
+            assert_equal 3, Dir.entries(@svn_testrepo).length
         end
     end
 
