@@ -36,11 +36,20 @@ for bridge in bridges
     next if h[:svn_repos] =~ /RELEASE_2_13/
     next if h[:github_url] =~ /ChemmineOB-release/
 
+    next if h[:svn_repos] =~ /Sushi/ # filename case conflict
+
     new_svn_repos = h[:svn_repos].sub REMOTE_SVN_REPO, LOCAL_SVN_REPO
     segs = h[:github_url].split("/")
     user = segs[segs.length-2]
     new_github_url = h[:github_url].sub("https://github.com", "file://#{CANONICAL_GIT_REPOS}") + ".git"
-    new_github_url = new_github_url.sub "/#{user}/", "/"
+    if user == @me # or use String#index
+        new_github_url = new_github_url.sub user, "IWASUSER"
+        new_github_url = new_github_url.sub "/#{user}/", "/"
+        new_github_url = new_github_url.sub "IWASUSER", user
+
+    else
+        new_github_url = new_github_url.sub "/#{user}/", "/"
+    end
     puts "changing #{h[:svn_repos]} to #{new_svn_repos}"
     puts "changing #{h[:github_url]} to #{new_github_url}"
     puts
