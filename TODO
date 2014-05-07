@@ -7,6 +7,7 @@ maybe need begin/rescue in new_bridge, clean up, and re-throw
 add scripts to:
     see what is up-to-date/out-of-sync and who is ahead and should win
         (suitable for running by crontab)
+fix FIXMEs regarding sending email to user when there is a case conflict
 
 --- end new (gsb2) stuff
 Don't hardcode release number in SVN_ROOTS.
