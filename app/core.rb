@@ -563,8 +563,20 @@ EOT
 
     end
 
-
     def GSBCore.new_bridge(githuburl, svnurl, conflict, username, password, email)
+        # this is just a wrapper for error handling and cleanup.
+        # open to suggestions for another way to do this.
+        begin
+            GSBCore._new_bridge(githuburl, svnurl, conflict,
+                username, password, email)
+        rescue Exception => ex
+            local_wc = get_wc_dirname(svnurl)
+            GSBCore.delete_bridge(local_wc)
+            raise ex.message
+        end
+    end
+
+    def GSBCore._new_bridge(githuburl, svnurl, conflict, username, password, email)
         if dupe_repo?(svnurl)
             raise "dupe_repo"
         end
@@ -596,7 +608,6 @@ EOT
                     raise "git_wc_exists" if File.exists? local_wc # not caught!
                     res  = run("git clone #{git_ssh_url} #{local_wc}")
                     unless success(res)
-                        FileUtils.rm_rf local_wc
                         raise "git_clone_failed"
                     end
                     Dir.chdir(local_wc) do
@@ -611,12 +622,6 @@ EOT
                             end
                         else
                             run("git checkout master")
-                            # if res.last =~ / master\n/
-                            #     run("git checkout master")
-                            # else
-                            #     FileUtils.rm_rf "."
-                            #     raise "no_master_branch_in_non_empty_git_repo"
-                            # end
                         end
                     end
                 end
@@ -633,8 +638,6 @@ EOT
                     dest = "git/#{local_wc}"
                     dest_vcs = "git"
                 else
-                    FileUtils.rm_rf "#{git}/#{local_wc}"
-                    FileUtils.rm_rf "#{svn}/#{local_wc}"
                     raise "invalid conflict value"
                 end
                 diff = get_diff src, dest
@@ -643,7 +646,7 @@ EOT
                     if dest_vcs == "git"
                         git_commit_and_push(dest, "setting up git-svn bridge")
                     else
-                        svn_commit(dest, "setting up git-svn bridge")
+                        svn_commit(dest, "setting up git-svn bridge", true)
                     end
                 end
             end
@@ -689,7 +692,7 @@ EOT
     end
 
     # FIXME git pull first?
-    def GSBCore.git_commit_and_push(git_wc_dir, commit_comment)
+    def GSBCore.git_commit_and_push(git_wc_dir, commit_comment, from_bridge=false)
         commit_file = Tempfile.new "gsb_git_commit_message"
         commit_file.write commit_comment
         commit_file.close
@@ -710,11 +713,23 @@ EOT
     end
 
     # FIXME svn up first?
-    def GSBCore.svn_commit(svn_wc_dir, commit_comment)
+    def GSBCore.svn_commit(svn_wc_dir, commit_comment, from_bridge=false)
         commit_file = Tempfile.new "gsb_svn_commit_message"
         commit_file.write commit_comment
         commit_file.close
         Dir.chdir svn_wc_dir do
+            res = run("svn status")
+            files = res.last.split("\n").map{|i|i.sub(/^.\s+/, "")}
+            seen = []
+            for file in files
+                if seen.include? file.downcase
+                    unless from_bridge
+                        # FIXME - email the user about this problem
+                    end
+                    raise "filename_case_conflict: #{file}"
+                end
+                seen << file.downcase
+            end
             res = run("svn commit -F #{commit_file.path}")
             raise "svn_commit_failed" unless success(res)
         end
@@ -836,7 +851,6 @@ EOT
                 unless filespec.empty?
                     res = run("svn delete #{filespec}")
                     unless success(res)
-                        # cleanup?
                         raise "svn_delete_failed"
                     end
                 end

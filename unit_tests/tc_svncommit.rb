@@ -161,6 +161,16 @@ class TestSvnCommit < Test::Unit::TestCase
 
     end
 
+    def test_case_handling
+        Dir.chdir @ext_svn_wc do
+            `touch caseprob caseProb`
+            `svn add caseprob caseProb`
+            assert_raise do
+                GSBCore.svn_commit @ext_svn_wc, "commit message", true
+            end
+        end
+    end
+
 end
 
 

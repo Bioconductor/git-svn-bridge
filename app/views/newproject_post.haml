@@ -32,7 +32,11 @@
         You have .svn files in your
         %span= branch
         branch. Remove these and try again!
-
+-elsif defined? filename_case_conflict and filename_case_conflict
+    %p.error
+        Filename case conflict; found two differently cased-versions of '
+        %span= badfile
+        '. Please fix this before creating your bridge.
 -else
     %h2
         Git-SVN bridge has been created.
