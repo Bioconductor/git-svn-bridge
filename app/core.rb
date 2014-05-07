@@ -774,92 +774,88 @@ EOT
         name.sub(/^git\//, "")
     end
 
-    # should also be run from ~/biocsync
+    def handle_svn_ignores
+        res = run("svn status --no-ignore")
+        ignores = res.last.split("\n").find_all{|i|i=~/^I/}
+        filespec = ""
+        for ignore in ignores
+
+            FileUtils.rm_rf(ignore.sub(/^I\s+/, ""))
+            # is rm_rf overkill?
+        end
+    end
+
+    def handle_git_ignores
+        res = run("git ls-files --others -i --exclude-standard")
+        for file in res.last.split("\n")
+            FileUtils.rm_rf file
+        end
+    end
+
     def GSBCore.resolve_diff(src, dest, diff, dest_vcs)
         src = File.expand_path src
         dest = File.expand_path dest
+        rsync_src = "#{src}/".sub(/\/\/$/, "/")
+
         if diff.nil?
             puts2 "nothing to do!"
             return
         end
         src_vcs = dest_vcs == "git" ? "svn" : "git"
-        for item in diff[:to_be_deleted]
-            if dest_vcs == "git"
-                gitname = gitname(item)
-                Dir.chdir dest do
-                    flag = File.directory?(item) ? " -r " : ""
-                    res = run("git rm #{flag} #{item}")
-                    unless success(res)
-                        raise "Failed to git rm #{flag} #{gitname}!"
-                    end
-                end
-            else # svn
-                Dir.chdir dest do
-                    res = run("svn delete #{item}")
-                    unless success(res)
-                        raise "Failed to svn delete #{item}!"
-                    end
-                end
-            end
+
+        res = run("rsync -av --checksum --delete --exclude=.svn --exclude=.git #{rsync_src} #{dest}")
+        unless success(res)
+            # how to clean up here?
+            raise "rsync_failed"
         end
+        if dest_vcs == "svn"
+            Dir.chdir dest do
 
-        adds = diff[:to_be_copied] + diff[:to_be_added]
 
-        for item in adds
-            # copy
+                res = run("svn status")
+                addme = res.last.split("\n").find_all{|i|i=~/^\?/}
+                deleteme = res.last.split("\n").find_all{|i|i=~/^!/}
 
-            if File.directory? "#{src}/#{item}"
-                res = run("rsync -a --exclude=.svn --exclude=.git #{src}/#{item}/ #{dest}/#{item}")
-            else
-                FileUtils.cp "#{src}/#{item}", "#{dest}/#{item}"
-            end
+                # handle additions
+                filespec = ""
+                for item in addme
+                    item.sub! /^\?\s+/, ""
+                    filespec += %Q( "#{item}" )
+                end
+                unless filespec.empty?
+                    res = run("svn add #{filespec}")
+                end
 
-            if dest_vcs == "git"
-                Dir.chdir dest do
-
-                    # skip empty directories, git does not deal
-                    if File.exists? item and File.directory? item and 
-                      Dir.entries(item).length==2
-                        next
-                    end
-
-                    res = system2("", "git add --dry-run #{item}")
-                    # weed out baddies
-                    if res[1] =~ /^The following paths are ignored/ 
-                        # don't add this one, it's ignored
-                        # by .gitignore
-                        # instead, delete it
-                        if File.directory? item
-                            FileUtils.rm_rf item
-                        else
-                            FileUtils.rm item
-                        end
-                        next
-                    end
-                    res = run("git add #{item}")
+                # handle deletions
+                filespec = ""
+                for item in deleteme
+                    item.sub! /^!\s+/, "" # hopefully filename doesn't
+                                          # start with whitespace
+                    filespec += %Q( "#{item}" )
+                end
+                unless filespec.empty?
+                    res = run("svn delete #{filespec}")
                     unless success(res)
-                        raise "Failed to git add #{item}!"
+                        # cleanup?
+                        raise "svn_delete_failed"
                     end
                 end
-            else # svn
-                Dir.chdir dest do
-                    if diff[:to_be_added].include? item
-                        res = run("svn status --no-ignore #{item}")
-                        if res.last =~ /^I/
-                            puts2 "svn says to ignore #{item}"
-                            if File.directory? item
-                                FileUtils.rm_rf item
-                            else
-                                FileUtils.rm item
-                            end
-                            next
-                        end
-                        res = run("svn add #{item}")
-                        unless success(res)
-                            raise "Failed to svn add #{item}!"
-                        end
-                    end
+                handle_svn_ignores()
+            end
+        else # git
+            Dir.chdir dest do
+                res = run("git add --all .")
+                res = run("git status")
+                deleteme = res.last.split("\n").find_all{|i|i=~/^ D/}
+                filespec = ""
+                for item in deleteme
+                    item.sub! /^ D /, ""
+                    filespec += %Q( "#{item}" )
                 end
+                unless filespec.empty?
+                    res = run("git delete #{filespec}")
+                end
+                handle_git_ignores()
             end
         end
     end
