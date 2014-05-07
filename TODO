@@ -2,7 +2,11 @@
 make sure that working copies are ALWAYS cleaned up if there is an exception
 when creating a bridge
 maybe need begin/rescue in new_bridge, clean up, and re-throw
-
+    make sure (web) user gets specific feedback about every error
+    (e.g. during bridge creation)
+add scripts to:
+    see what is up-to-date/out-of-sync and who is ahead and should win
+        (suitable for running by crontab)
 
 --- end new (gsb2) stuff
 Don't hardcode release number in SVN_ROOTS.
