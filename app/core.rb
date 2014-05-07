@@ -868,3 +868,29 @@ EOT
     end
 
 end
+
+
+class BridgeList
+    include Enumerable
+
+    include GSBCore
+
+    def initialize
+        @data = GSBCore.get_db.execute2("select * from bridges")
+        @columns = @data.shift
+    end
+
+    def hashify(row)
+        h = {}
+        @columns.each_with_index do |col, i|
+            h[col.to_sym] = row[i]
+        end
+        h
+    end
+
+    def each(&block)
+        @data.each do |item|
+            block.call(hashify(item))
+        end
+    end
+end 
