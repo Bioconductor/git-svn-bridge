@@ -476,10 +476,10 @@ EOT
         rescue
             puts2 "Caught an error running system command"
         end
-        result = thr.value.exitstatus
-        puts2 "result code: #{result}"
         stdout_str = stdout.gets(nil)
         stderr_str = stderr.gets(nil)
+        result = thr.value.exitstatus
+        puts2 "result code: #{result}"
         # FIXME - apparently not all output (stderr?) is shown when there is an error
         puts2 "stdout output:\n#{stdout_str}"
         puts2 "stderr output:\n#{stderr_str}"
@@ -569,7 +569,7 @@ EOT
             raise "dupe_repo"
         end
 
-        unless ENV['TESTING_GSB'] == 'true'
+        unless ENV['TESTING_GSB'] == 'true' or ENV['SKIP_SANITY_CHECKS'] == 'true'
             bridge_sanity_checks(githuburl, svnurl, conflict, username, password)
         end
 
@@ -610,12 +610,13 @@ EOT
                                 conflict = "svn-wins"
                             end
                         else
-                            if res.last =~ / master\n/
-                                run("git checkout master")
-                            else
-                                FileUtils.rm_rf "."
-                                raise "no_master_branch_in_non_empty_git_repo"
-                            end
+                            run("git checkout master")
+                            # if res.last =~ / master\n/
+                            #     run("git checkout master")
+                            # else
+                            #     FileUtils.rm_rf "."
+                            #     raise "no_master_branch_in_non_empty_git_repo"
+                            # end
                         end
                     end
                 end
