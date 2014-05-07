@@ -111,6 +111,56 @@ class TestSvnCommit < Test::Unit::TestCase
 
     end
 
+
+    def setup_test_no_loop
+        Dir.chdir @ext_svn_wc do
+            f = File.open("foo.txt", "w")
+            f.puts "hello, world"
+            f.close
+            `svn add foo.txt`
+            `svn ci -m 'first commit'`
+        end
+
+        res = GSBCore.new_bridge(@gitrepo, @svnrepo, "svn-wins",
+            $config['test_username'], $config['test_username'],
+            $config['test_email'])
+
+        Dir.chdir @ext_git_wc do
+            `git pull`
+            f = File.open("foo.txt", "a")
+            f.puts "added by git"
+            f.close
+            `git add foo.txt`
+            `git commit -m 'added a line'`
+            `git push`
+        end
+    end
+
+    def test_no_loop
+        setup_test_no_loop
+
+        mock_push_object = {"repository" => {"url" => @gitrepo}}
+
+        res = GSBCore.handle_git_push(mock_push_object)
+
+        assert_equal "received", res
+
+        revnum = nil
+        Dir.chdir @ext_svn_wc do
+            res = `svn up`
+            revnum = res.split("At revision ").last.strip.sub(".", "")
+        end
+        repo = @svnrepo.sub("file://", "")
+        repos = GSBCore.get_monitored_svn_repos_affected_by_commit(
+            revnum, repo)
+        assert_equal 1, repos.length
+        res = GSBCore.handle_svn_commit(repos.first)
+
+        assert_equal "success", res
+
+
+    end
+
 end
 
 

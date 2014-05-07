@@ -168,9 +168,9 @@ module GSBCore
 
 
     def GSBCore.get_lock_file_name(wc_dir)
-        wc_dir.gsub!(/\/$/, "")
-        wc_dir.gsub!(/^#{SVN_URL}/, "")
-        lockfile =  "#{Dir.tmpdir}/#{wc_dir.gsub("/", "_").gsub(":", "-")}" 
+        lockfile = wc_dir.gsub(/\/$/, "")
+        lockfile = lockfile.gsub(/^#{SVN_URL}/, "")
+        lockfile =  "#{Dir.tmpdir}/#{lockfile.gsub("/", "_").gsub(":", "-")}" 
         puts2 "get_lock_file_name returning #{lockfile}"
         lockfile
     end
@@ -180,8 +180,9 @@ module GSBCore
       repos="/extra/svndata/gentleman/svnroot/bioconductor")
         svnroot = nil
         default_repos = "/extra/svndata/gentleman/svnroot/bioconductor"
+        default_svn_url = "https://hedgehog.fhcrc.org/bioconductor/"
         if repos == default_repos
-            svnroot = default_repos
+            svnroot = default_svn_url
         else
             svnroot = "file://#{repos}/".sub(/\/\/$/, "/")
         end
@@ -192,7 +193,6 @@ module GSBCore
         cmd = "svn log --xml -v --username pkgbuild --password #{p} --non-interactive " +
           "-r #{rev_num} --limit 1 #{svnroot}"
         result = `#{cmd}`
-        #puts2("after system")
         #result = run(cmd)
         xml_doc = Nokogiri::XML(result)
         paths = xml_doc.xpath("//path")
@@ -222,7 +222,6 @@ module GSBCore
             end
         end
         return ret.keys
-
     end
 
 
@@ -460,9 +459,9 @@ EOT
 
     def GSBCore.pp2(arg)
         puts PP.pp(arg, "")
-        if (ENV["RUNNING_SINATRA"] == "true")
-            STDERR.puts PP.pp(arg, "")
-        end
+        # if (ENV["RUNNING_SINATRA"] == "true")
+        #     STDERR.puts PP.pp(arg, "")
+        # end
     end
 
 
@@ -574,6 +573,7 @@ EOT
             bridge_sanity_checks(githuburl, svnurl, conflict, username, password)
         end
 
+
         segs = githuburl.split("/")
         gitprojname = segs.pop
         githubuser = segs.pop
@@ -587,13 +587,18 @@ EOT
 
         local_wc = get_wc_dirname(svnurl)
 
+
         lockfile = get_lock_file_name(svnurl)
+
         GSBCore.lock(lockfile) do
             Dir.chdir "#{ENV['HOME']}/biocsync" do
                 Dir.chdir("git") do
                     raise "git_wc_exists" if File.exists? local_wc # not caught!
                     res  = run("git clone #{git_ssh_url} #{local_wc}")
-                    raise "git_clone_failed" unless success(res)
+                    unless success(res)
+                        FileUtils.rm_rf local_wc
+                        raise "git_clone_failed"
+                    end
                     Dir.chdir(local_wc) do
                         repo_is_empty = false
                         res = run("git branch")
@@ -608,6 +613,7 @@ EOT
                             if res.last =~ / master\n/
                                 run("git checkout master")
                             else
+                                FileUtils.rm_rf "."
                                 raise "no_master_branch_in_non_empty_git_repo"
                             end
                         end
@@ -626,14 +632,18 @@ EOT
                     dest = "git/#{local_wc}"
                     dest_vcs = "git"
                 else
+                    FileUtils.rm_rf "#{git}/#{local_wc}"
+                    FileUtils.rm_rf "#{svn}/#{local_wc}"
                     raise "invalid conflict value"
                 end
                 diff = get_diff src, dest
-                resolve_diff src, dest, diff, dest_vcs
-                if dest_vcs == "git"
-                    git_commit_and_push(dest, "setting up git-svn bridge")
-                else
-                    svn_commit(dest, "setting up git-svn bridge")
+                unless diff.nil?
+                    resolve_diff src, dest, diff, dest_vcs
+                    if dest_vcs == "git"
+                        git_commit_and_push(dest, "setting up git-svn bridge")
+                    else
+                        svn_commit(dest, "setting up git-svn bridge")
+                    end
                 end
             end
 
@@ -684,7 +694,14 @@ EOT
         commit_file.close
         Dir.chdir git_wc_dir do
             res = run("git commit -F #{commit_file.path}")
-            raise "git_commit_failed" unless success(res)
+            unless success(res)
+                if res.last =~ /nothing to commit, working directory clean/
+                    commit_file.unlink
+                    return
+                else
+                    raise "git_commit_failed"
+                end
+            end
             res = run("git push")
             raise "push_failed" unless success(res)
         end
@@ -724,8 +741,14 @@ EOT
         to_be_deleted = []
         to_be_added = []
         to_be_copied = []
-        raise "src dir #{src} doesn't exist!" unless File.directory? src
-        raise "dest dir #{dest} doesn't exist!" unless File.directory? dest
+
+        unless File.directory? src
+            raise "src dir #{src} doesn't exist!"
+        end
+
+        unless File.directory? dest
+            raise "dest dir #{dest} doesn't exist!"
+        end
         res = run("diff -rq -x .git -x .svn #{src} #{dest}")
         lines = res[1].split "\n"
         for line in lines

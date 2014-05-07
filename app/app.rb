@@ -6,23 +6,6 @@ require_relative './core'
 
 include GSBCore
 
-##require 'debugger'
-# require 'pry'
-# require 'crypt/gost'
-# require 'base64'
-# require './auth'
-# require 'json'
-# require 'nokogiri'
-# require 'net/smtp'
-# require 'open-uri'
-# require 'fileutils'
-# require 'tempfile'
-# require 'tmpdir'
-# require 'open3'
-# require 'sqlite3'
-# require 'net/http'
-
-
 ENV['RUNNING_SINATRA'] = "true"
 
 #use Rack::Session::Cookie, secret: 'change_me'
@@ -70,7 +53,7 @@ helpers do
     def production?
         host = request.env['HTTP_HOST']
         if host.nil?
-            puts2 "alert: request.env['HTTP_HOST'] was nil..."
+            GSBCore.puts2 "alert: request.env['HTTP_HOST'] was nil..."
             host = "nil"
         end
         if ["gitsvn.bioconductor.org", 
@@ -174,29 +157,34 @@ end
 
 
 post '/git-push-hook' do
+    raw = request.env["rack.input"].read
+    GSBCore.puts2 "request.ip is #{request.ip}"
+    GSBCore.puts2 "here goes:"
+    GSBCore.puts2 raw
     # DON'T specify usessl! here!
     # make sure the request comes from one of these IP addresses:
     # 204.232.175.64/27, 192.30.252.0/22. (or is us, testing)
     unless request.ip =~ 
         /^204\.232\.175|^192\.30\.252|^140\.107|23\.23\.227\.214|^127\.0\.0\.1$/
-        puts2 "/git-push-hook: got a request from an invalid ip (#{request.ip})"
+        GSBCore.puts2 "/git-push-hook: got a request from an invalid ip (#{request.ip})"
         return "You don't look like github to me."
     end
-    puts2 "!!!!"
-    puts2 "in /git-push-hook!!!!"
-    puts2 "!!!!"
+    GSBCore.puts2 "!!!!"
+    GSBCore.puts2 "in /git-push-hook!!!!"
+    GSBCore.puts2 "!!!!"
     #push = JSON.parse(params[:payload])
 
-    # FIXME you could do more checking on the format of params[:payload]
+
     push = nil
-    repos = nil
+
+
 
     begin
-        push = params[:payload]
-        repos = push["repository"]["url"].rts
+        #push = params[:payload]
+        push = JSON.parse raw
     rescue
         msg = "malformed push payload"
-        push2 msg
+        GSBCore.puts2 msg
         return msg
     end
 
@@ -204,21 +192,6 @@ post '/git-push-hook' do
         return GSBCore.handle_git_push(push)
     rescue
     end
-
-
-
-    gitpush = JSON.parse(params["payload"])
-    if gitpush.has_key? "zen"
-        puts2 "responding to ping"
-        return "#{obj["zen"]} Wow, that's pretty zen!"
-    end
-
-    if gitpush.has_key? "ref" and gitpush["ref"] != "refs/heads/master"
-        return "ignoring push to refs other than refs/heads/master"
-    end
-
-
-
 end
 
 get '/' do
@@ -234,21 +207,22 @@ get '/svn-commit-hook' do
     sleep 1 # give app a chance to cache the commit id
     # make sure request comes from a hutch ip
     unless request.ip  =~ /^140\.107|^127\.0\.0\.1$/ #  140.107.170.120 appears to be hedgehog
-        puts2 "/svn-commit-hook: got a request from an invalid ip (#{request.ip})"
+        GSBCore.puts2 "/svn-commit-hook: got a request from an invalid ip (#{request.ip})"
         return "You don't look like a hedgehog to me."
     end
-    puts2 "in svn-commit-hook handler"
+    GSBCore.puts2 "in svn-commit-hook handler"
     repos = params[:repos]
     rev = params[:rev]
     if (request.ip != "127.0.0.1") and 
       (repos != "/extra/svndata/gentleman/svnroot/bioconductor")
         return "not monitoring this repo"
     end
-    affected_repos = get_monitored_svn_repos_affected_by_commit(rev, repos)
+    affected_repos =
+      GSBCore.get_monitored_svn_repos_affected_by_commit(rev, repos)
     for repo in affected_repos
         svn_repo, local_wc = repo.split("\t")
-        puts2 "got a commit to the repo #{svn_repo}, local wc #{local_wc}"
-        handle_svn_commit(svn_repo)
+        GSBCore.puts2 "got a commit to the repo #{svn_repo}, local wc #{local_wc}"
+        GSBCore.handle_svn_commit(svn_repo)
     end
     "received!" 
 end
@@ -279,7 +253,6 @@ post '/newproject' do
 
     svnurl = "#{rootdir}#{svndir}"
 
-
     begin
         GSBCore.new_bridge(githuburl, svnurl, conflict,
             session[:username], session[:password], email)
@@ -300,6 +273,7 @@ post '/newproject' do
                 :no_master_branch_in_non_empty_git_repo => true,
                 :message => "Non-empty Git repository must have a master branch!"}
         else
+            GSBCore.puts2 "other error message: #{ex.message}"
             return haml :newproject_post, :locals => {:other_error => true}
         end
     end
