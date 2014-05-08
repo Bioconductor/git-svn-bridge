@@ -820,7 +820,6 @@ EOT
 
         res = run("rsync -av --checksum --delete --exclude=.svn --exclude=.git #{rsync_src} #{dest}")
         unless success(res)
-            # how to clean up here?
             raise "rsync_failed"
         end
         if dest_vcs == "svn"
