@@ -6,7 +6,7 @@ require_relative './core'
 
 include GSBCore
 
-ENV['RUNNING_SINATRA'] = "true"
+ENV['RUNNING_SINATRA'] = "true" if `hostname` =~ /^ip/
 
 #use Rack::Session::Cookie, secret: 'change_me'
 enable :sessions
