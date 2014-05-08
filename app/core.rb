@@ -405,6 +405,9 @@ EOT
         repos.find_all {|i| svn_path =~ /^#{i}/}
     end
 
+    def GSBCore.get_user_record_from_id(id)
+        get_db.get_first_row("select * from users where rowid = ?", id)
+    end
 
 
     def GSBCore.get_user_record(svn_username)
