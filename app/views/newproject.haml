@@ -30,8 +30,19 @@
     %label(for="email")Your email address:
     %input#email(type="text" name="email" size="60")
   %p
-    How do you want to handle merge conflicts in the initial merge?
+    How do you want to handle resolving conflicts when creating the bridge?
     You can ignore this if your Github repository is empty.
+  %p
+    %b
+      IMPORTANT NOTE: 
+    ALL files in the "losing" repository will be removed! This is not 
+    a merge, it is like an 
+    %code
+      rsync&nbsp;&#8209;&#8209;delete
+    between two directories. See the
+    = succeed "." do
+      %a{href: "http://www.bioconductor.org/developers/how-to/git-svn/#who-wins", target: "_blank"} documentation
+    %p
     %table
       %tr
         %td
