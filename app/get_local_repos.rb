@@ -53,7 +53,9 @@ for bridge in bridges
     puts "changing #{h[:svn_repos]} to #{new_svn_repos}"
     puts "changing #{h[:github_url]} to #{new_github_url}"
     puts
-    res = GSBCore.new_bridge(new_github_url, new_svn_repos, "git-wins", @config["test_username"],
+
+    conflict = "git-wins"
+    res = GSBCore.new_bridge(new_github_url, new_svn_repos, conflict, @config["test_username"],
         @config["test_password"], @config["test_email"])
     puts res
 
