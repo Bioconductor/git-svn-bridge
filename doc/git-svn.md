@@ -125,7 +125,7 @@ in [step 1](#step1), e.g.
 When initially creating the bridge, the process that
 takes place is not a "merge" like you may be accustomed
 to from `git` or `svn`. It's really more like an `rsync` 
-with the `delete` option. 
+with the `--delete` option. 
 
 What this means is, you decide who is going to "win", (git or svn)
 and if you choose git, then all conflicts will be resolved 
@@ -143,39 +143,22 @@ in git's favor. Specifically, the following is what will happen:
 * Conversely, if a file exists in git but not svn, that 
   file will be added to the svn repository.
 
-If you picked "svn wins", the above is true, but vice versa.
+If you picked "svn wins", the above is true, but with git and svn
+reversed.
 
 
 * If your git repository is completely empty (i.e., you haven't
   even added a README file, or any files) and you specified
   "git wins," the bridge will override that and declare svn
-  the winner. <span style="color: red;">HOWEVER</a>, if you 
+  the winner. <span style="color: red;">HOWEVER</span>, if you
+  have even a single file in your git repos, and you choose
+  "git wins," <span style="color: red;">everything in your svn
+  repos will be deleted</span>.
+* Of course, nothing is ever deleted in git or svn, so you can
+  go back in and retrieve files, but it's best to avoid this
+  situation in the first place.
 
 
-vvv remove the below vvv
-
-Decide how you want to handle initial merge conflicts. 
-If you are starting with a **completely** empty Github repository
-(which does not even have a README file in it), then it does not matter
-how you answer this question.
-
-If both your Subversion and your Github repositories have contents, 
-decide **carefully** how you want to proceed:
-
-* Choosing "SVN wins unconditionally" means that if there are any
-  conflicts when merging the two repositories together, the SVN
-  version will overwrite the Github version.
-  You will not have the opportunity
-  to manually merge conflicting files. You will still have access
-  to the previous versions of
-  files that were changed, via git's commit history.
-
-* Choosing "Git wins unconditionally" means the opposite--
-  any merge conflicts will be resolved in Git's favor,
-  and this will then **propagate to the
-  Bioconductor build system**. You will have access to
-  earlier versions of files
-  that were changed, but only via svn.
 
 You now need to check two boxes: the first confirms that you have 
 configured your Github repository as described in [Step 1](#step1),

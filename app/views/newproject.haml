@@ -34,12 +34,12 @@
     You can ignore this if your Github repository is empty.
   %p
     %b
-      IMPORTANT NOTE: 
+      %span{style: "color: red;"} IMPORTANT NOTE: 
     ALL files in the "losing" repository will be removed! This is not 
     a merge, it is like an 
     %code
       rsync&nbsp;&#8209;&#8209;delete
-    between two directories. See the
+    between two directories. See the relevant section of the 
     = succeed "." do
       %a{href: "http://www.bioconductor.org/developers/how-to/git-svn/#who-wins", target: "_blank"} documentation
     %p
@@ -53,7 +53,7 @@
           %input{name: "conflict", type: "radio", value: "git-wins"}
           Git wins unconditionally
 
-
+    %p
     %p Before submitting this page, make sure your Github repository is configured as follows:
   %ul
     %li In a new browser window, open your Github repository page.
