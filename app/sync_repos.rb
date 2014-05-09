@@ -127,5 +127,6 @@ begin
 
 rescue Exception => ex 
     notify_general_failure(ex.message)
+    raise ex
 end
 
