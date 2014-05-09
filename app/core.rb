@@ -294,7 +294,7 @@ EOT
                 diff = get_diff(wdir, svn_wdir)
                 begin
                     resolve_diff wdir, svn_wdir, diff, "svn"
-                    svn_commit(svn_wdir, commit_message)
+                    svn_commit(svn_wdir, commit_message, owner)
                 rescue Exception => ex
                     if ex.message =~ /^Failed to git/
                         return "failed to 'git rm' an item"
@@ -649,7 +649,7 @@ EOT
                     if dest_vcs == "git"
                         git_commit_and_push(dest, "setting up git-svn bridge")
                     else
-                        svn_commit(dest, "setting up git-svn bridge", true)
+                        svn_commit(dest, "setting up git-svn bridge", username, true)
                     end
                 end
             end
@@ -716,7 +716,9 @@ EOT
     end
 
     # FIXME svn up first?
-    def GSBCore.svn_commit(svn_wc_dir, commit_comment, from_bridge=false)
+    def GSBCore.svn_commit(svn_wc_dir, commit_comment, svn_username, from_bridge=false)
+        user = GSBCore.get_user_record(svn_username)
+        pw = GSBCore.decrypt user.last
         commit_file = Tempfile.new "gsb_svn_commit_message"
         commit_file.write commit_comment
         commit_file.close
@@ -733,7 +735,8 @@ EOT
                 end
                 seen << file.downcase
             end
-            res = run("svn commit -F #{commit_file.path}")
+            res = system2(pw,
+                "svn commit -F #{commit_file.path} #{svnflags(svn_username)}")
             raise "svn_commit_failed" unless success(res)
         end
         commit_file.unlink
