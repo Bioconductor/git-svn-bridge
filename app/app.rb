@@ -172,16 +172,13 @@ post '/git-push-hook' do
     GSBCore.puts2 "!!!!"
     GSBCore.puts2 "in /git-push-hook!!!!"
     GSBCore.puts2 "!!!!"
-    #push = JSON.parse(params[:payload])
 
 
     push = nil
 
 
-
     begin
-        #push = params[:payload]
-        push = JSON.parse raw
+        push = JSON.parse(params[:payload])
     rescue
         msg = "malformed push payload"
         GSBCore.puts2 msg
