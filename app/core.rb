@@ -111,7 +111,7 @@ module GSBCore
         encpass = bridge[:encpass]
         password = decrypt(encpass)
         puts2 "owner is #{owner}"
-        res = system2(password, "svn log -v --xml --limit 1 --non-interactive --no-auth-cache --username #{owner} --password \"$SVNPASS\" #{svn_repos}", false)
+        res = system2(password, "svn log -v --xml --limit 1 --non-interactive --no-auth-cache --username #{owner} --password $SVNPASS #{svn_repos}", false)
         # doc = Nokogiri::Slop(res.last)
         # msg = doc.log.logentry.msg.text
         # if (msg =~ /Commit made by the git-svn bridge/)
@@ -471,7 +471,7 @@ EOT
     def GSBCore.system2(pw, cmd, echo=false)
         cmd = cmd.gsub "$SVNPASS", '"$SVNPASS"'
         if echo
-            cmd = "echo \"$SVNPASS\" | #{cmd}"
+            cmd = "echo $SVNPASS | #{cmd}"
         end
         env = {"SVNPASS" => pw}
         puts2 "running SYSTEM command: #{cmd}"
@@ -518,7 +518,7 @@ EOT
         # verify that svn repos exists and user has read permissions on it
         local_wc = get_wc_dirname(svnurl)
         result = system2(password,
-            "svn log --non-interactive --no-auth-cache --username #{username} --password \"$SVNPASS\" --limit 1 #{svnurl}")
+            "svn log --non-interactive --no-auth-cache --username #{username} --password $SVNPASS --limit 1 #{svnurl}")
         if result.first != 0 # repos does not exist or user does not have read privs
             raise "repo_error"
         end
