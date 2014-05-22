@@ -469,8 +469,9 @@ EOT
 
 
     def GSBCore.system2(pw, cmd, echo=false)
+        cmd = cmd.gsub "$SVNPASS", '"$SVNPASS"'
         if echo
-            cmd = "echo $SVNPASS | #{cmd}"
+            cmd = "echo \"$SVNPASS\" | #{cmd}"
         end
         env = {"SVNPASS" => pw}
         puts2 "running SYSTEM command: #{cmd}"
