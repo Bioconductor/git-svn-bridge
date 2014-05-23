@@ -191,8 +191,12 @@ post '/git-push-hook' do
 
     begin
         return GSBCore.handle_git_push(push)
-    rescue
+    rescue Exception => ex
+        msg = "handle_git_push failed, message was: #{ex.message}"
+        GSBCore.puts2 msg
+        return(msg)
     end
+    return "ok"
 end
 
 get '/' do
