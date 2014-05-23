@@ -180,9 +180,13 @@ post '/git-push-hook' do
     begin
         push = JSON.parse(params[:payload])
     rescue
-        msg = "malformed push payload"
-        GSBCore.puts2 msg
-        return msg
+        begin
+            push = raw
+        rescue
+            msg = "malformed push payload"
+            GSBCore.puts2 msg
+            return msg
+        end
     end
 
     begin
