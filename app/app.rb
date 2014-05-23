@@ -181,7 +181,7 @@ post '/git-push-hook' do
         push = JSON.parse(params[:payload])
     rescue
         begin
-            push = raw
+            push = JSON.parse(raw)
         rescue
             msg = "malformed push payload"
             GSBCore.puts2 msg
