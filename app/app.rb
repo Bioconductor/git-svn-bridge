@@ -195,6 +195,7 @@ post '/git-push-hook' do
         msg = "handle_git_push failed, message was: #{ex.message}"
         GSBCore.puts2 msg
         GSBCore.puts2 ex.backtrace
+        GSBCore.puts2 push
         return(msg)
     end
     return "ok"
