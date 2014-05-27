@@ -288,7 +288,7 @@ post '/newproject' do
                 :message => "Non-empty Git repository must have a master branch!"}
         elsif ex.message =~ /^filename_case_conflict/
             GSBCore.puts2 "we have a case conflict"
-            return haml :newproject_post, :local_wc => {
+            return haml :newproject_post, :locals => {
                 :filename_case_conflict => true,
                 :badfile => ex.message.sub(":filename_case_conflict: ", "")
             }
