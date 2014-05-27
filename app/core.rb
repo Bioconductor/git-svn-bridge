@@ -852,7 +852,7 @@ MESSAGE_END
         name.sub(/^git\//, "")
     end
 
-    def handle_svn_ignores
+    def GSBCore.handle_svn_ignores
         res = run("svn status --no-ignore")
         ignores = res.last.split("\n").find_all{|i|i=~/^I/}
         filespec = ""
@@ -863,7 +863,7 @@ MESSAGE_END
         end
     end
 
-    def handle_git_ignores
+    def GSBCore.handle_git_ignores
         res = run("git ls-files --others -i --exclude-standard")
         for file in res.last.split("\n")
             FileUtils.rm_rf file
@@ -916,7 +916,7 @@ MESSAGE_END
                         raise "svn_delete_failed"
                     end
                 end
-                handle_svn_ignores()
+                GSBCore.handle_svn_ignores()
             end
         else # git
             Dir.chdir dest do
@@ -931,7 +931,7 @@ MESSAGE_END
                 unless filespec.empty?
                     res = run("git delete #{filespec}")
                 end
-                handle_git_ignores()
+                GSBCore.handle_git_ignores()
             end
         end
     end
