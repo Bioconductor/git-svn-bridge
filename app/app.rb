@@ -290,7 +290,7 @@ post '/newproject' do
             GSBCore.puts2 "we have a case conflict"
             return haml :newproject_post, :locals => {
                 :filename_case_conflict => true,
-                :badfile => ex.message.sub(":filename_case_conflict: ", "")
+                :badfile => ex.message.sub("filename_case_conflict: ", "")
             }
         else
             GSBCore.puts2 "other error message: #{ex.message}"
