@@ -297,6 +297,7 @@ EOT
                     resolve_diff wdir, svn_wdir, diff, "svn"
                     svn_commit(svn_wdir, commit_message, owner)
                 rescue Exception => ex
+                    send_exception_email("handle_git_push failed", ex, repository)
                     if ex.message =~ /^Failed to git/
                         return "failed to 'git rm' an item"
                     elsif ex.message =~ /^Failed to svn/
@@ -479,6 +480,7 @@ EOT
         begin
             stdin, stdout, stderr, thr = Open3.popen3(env, cmd)
         rescue
+            send_exception_email("system2 error", ex, cmd)
             puts2 "Caught an error running system command"
         end
         stdout_str = stdout.gets(nil)
@@ -510,6 +512,56 @@ EOT
         return result.first==0 if result.is_a? Array and result.first.is_a? Fixnum
         result.first.exitstatus == 0
     end
+
+    def GSBCore.production?
+         `hostname` =~ /^ip/
+    end
+
+    def GSBCore.web?
+        ENV.has_key? 'HTTP_HOST'
+    end
+
+    def GSBCore.send_exception_email(subject, ex, more=nil)
+        unless web? and production?
+            puts2 "not sending email, not on web and production"
+            return
+        end
+        body=<<"MESSAGE_END"
+Got an exception of class #{ex.class}.
+
+Message: #{ex.message}
+
+Backtrace:
+#{ex.backtrace}
+
+
+MESSAGE_END
+        unless more.nil?
+            body += "\nMore:\n#{more.pretty_inspect}"
+        end
+        send_email(subject, body)
+    end
+
+    def GSBCore.send_email(subject, msg)
+        to_email = "dtenenbafhcrc.org"
+        to_name = "Dan Tenenbaum"
+        from_email = "biocbuildfhrc.org"
+        from_name = "Git SVN Bridge"
+
+        message = <<"MESSAGE_END"
+From: #{from_name} <#{from_email}>
+To: #{to_name} <#{to_email}>
+Subject: #{subject}
+
+#{msg}
+MESSAGE_END
+        
+        Net::SMTP.start('mx.fhcrc.org') do |smtp|
+          smtp.send_message message, from_email, 
+                                     to_email
+        end
+    end
+
 
     def GSBCore.bridge_sanity_checks(githuburl, svnurl, conflict, username, password)
         segs = githuburl.split("/")
@@ -577,6 +629,9 @@ EOT
         rescue Exception => ex
             local_wc = get_wc_dirname(svnurl)
             GSBCore.delete_bridge(local_wc)
+            send_exception_email("exception creating bridge", ex,
+                {:githuburl => githuburl, :svnurl => svnurl, :conflict => conflict,
+                    :username => username, :email => email})
             raise ex.message
         end
     end

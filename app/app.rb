@@ -183,7 +183,10 @@ post '/git-push-hook' do
     rescue
         begin
             push = JSON.parse(raw)
-        rescue
+        rescue Exception => ex
+            GSBCore.send_exception_email("malformed push payload!", ex, {
+                :raw => raw, :push => push
+                })
             msg = "malformed push payload"
             GSBCore.puts2 msg
             return msg
@@ -193,6 +196,7 @@ post '/git-push-hook' do
     begin
         return GSBCore.handle_git_push(push)
     rescue Exception => ex
+        GSBCore.send_exception_email("in app.rb, handle_git_push failed", ex, push)
         msg = "handle_git_push failed, message was: #{ex.message}"
         GSBCore.puts2 msg
         GSBCore.puts2 ex.backtrace
