@@ -514,7 +514,11 @@ EOT
     end
 
     def GSBCore.production?
-         `hostname` =~ /^ip/
+        if `hostname` =~ /^ip/
+            true
+        else
+            false
+        end
     end
 
     def GSBCore.web?
@@ -522,7 +526,7 @@ EOT
     end
 
     def GSBCore.send_exception_email(subject, ex, more=nil)
-        unless web? and production?
+        unless GSBCore.web? and GSBCore.production?
             puts2 "not sending email, not on web and production"
             return
         end
