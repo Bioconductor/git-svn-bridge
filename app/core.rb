@@ -522,7 +522,7 @@ EOT
     end
 
     def GSBCore.web?
-        ENV.has_key? 'HTTP_HOST'
+        ENV.has_key? 'RACK_ENV'
     end
 
     def GSBCore.send_exception_email(subject, ex, more=nil)
