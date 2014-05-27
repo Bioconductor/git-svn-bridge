@@ -268,8 +268,10 @@ post '/newproject' do
     begin
         GSBCore.new_bridge(githuburl, svnurl, conflict,
             session[:username], session[:password], email)
+        GSBCore.puts2 "nothing raised"
         return haml :newproject_post, :locals => {:dupe_repo => false, :collab_ok => true}
     rescue Exception => ex
+        GSBCore.puts2 "exception raised: #{ex.message}"
         if ex.message == "dupe_repo"
             return   haml :newproject_post, :locals => {:dupe_repo => true, :collab_ok => true}
         elsif ex.message == "repo_error"
