@@ -547,9 +547,9 @@ MESSAGE_END
     end
 
     def GSBCore.send_email(subject, msg)
-        to_email = "dtenenbafhcrc.org"
+        to_email = "dtenenba@fhcrc.org"
         to_name = "Dan Tenenbaum"
-        from_email = "biocbuildfhrc.org"
+        from_email = "biocbuild@fhcrc.org"
         from_name = "Git SVN Bridge"
 
         message = <<"MESSAGE_END"
