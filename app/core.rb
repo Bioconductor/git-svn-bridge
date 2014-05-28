@@ -59,7 +59,7 @@ module GSBCore
         res = nil
         begin
             res = auth("#{APP_ROOT}/etc/bioconductor.authz", username, password)
-
+            raise InvalidLogin unless res
             urls = auth("#{APP_ROOT}/etc/bioconductor.authz",
                 username,
                 password,

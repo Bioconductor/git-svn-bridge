@@ -28,6 +28,11 @@ class TestLogin < Test::Unit::TestCase
            GSBCore.login("readonly", "readonly")
        end
 
+       assert_raise(InvalidLogin) do
+           GSBCore.login("d.tenenbaum", "clearlyAnInvalidPassword")
+       end
+
+
     end
 
 end
