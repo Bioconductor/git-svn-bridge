@@ -230,7 +230,7 @@ module GSBCore
     def GSBCore.handle_git_push(push)
         if push.has_key? "zen"
             puts2 "responding to ping"
-            return "#{obj["zen"]} Wow, that's pretty zen!"
+            return "#{push["zen"]} Wow, that's pretty zen!"
         end
 
 
