@@ -772,7 +772,7 @@ MESSAGE_END
                     raise "git_commit_failed"
                 end
             end
-            res = run("git push")
+            res = run("git push origin master")
             raise "push_failed" unless success(res)
         end
         commit_file.unlink
