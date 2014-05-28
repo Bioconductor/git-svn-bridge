@@ -132,7 +132,7 @@ post '/login' do
             redirect to redirect_url
         end
 
-    rescue
+    rescue InvalidLogin
         session[:message] = "Incorrect username/password, " + \
           "or you don't have permission to write to any SVN repositories." 
         redirect url "/"
