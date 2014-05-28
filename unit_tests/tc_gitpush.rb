@@ -112,6 +112,15 @@ class TestGitPush < Test::Unit::TestCase
 
     end
 
+    def test_ping
+        res = nil
+        koan = "Chop water. Carry wood."
+        assert_nothing_raised do
+            res = GSBCore.handle_git_push({"zen" => koan})
+        end
+        assert_equal(koan + " Wow, that's pretty zen!", res)
+    end
+
 end
 
 
