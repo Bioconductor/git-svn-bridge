@@ -228,12 +228,14 @@ module GSBCore
 
 
     def GSBCore.handle_git_push(push)
-        repository = push["repository"]["url"] #.rts?
-
         if push.has_key? "zen"
             puts2 "responding to ping"
             return "#{obj["zen"]} Wow, that's pretty zen!"
         end
+
+
+        repository = push["repository"]["url"] #.rts?
+
 
         if push.has_key? "ref" and push["ref"] != "refs/heads/master"
             return "ignoring push to refs other than refs/heads/master"
