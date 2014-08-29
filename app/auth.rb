@@ -53,6 +53,7 @@ def auth(authfile, username, password, return_urls=false)
         if group_mode
             line.gsub!(/ /, "")
             groupname, membersraw = line.split("=")
+            next if membersraw.nil?
             members = membersraw.split(",")
             groups.push groupname if members.include? username
         else
