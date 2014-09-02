@@ -225,7 +225,42 @@ module GSBCore
         return ret.keys
     end
 
+    def GSBCore.clean_commit_message(msg)
+        outlines = []
+        msgmode = false
+        append = true
+        for line in msg.split("\n")
+            append = true
+            if msgmode
+                line = "    " + line
+            end
 
+            if line =~ /^___COMMITMSG_FIRSTLINE___:/
+                # puts "got commit msg firstline"
+                line.sub! /^___COMMITMSG_FIRSTLINE___:/, "    "
+                line = line + "\n"
+            end
+
+            if line.strip() == "___END_COMMIT_MSG___"
+                # puts "hit end msg"
+                msgmode = false
+                append = false
+            end
+
+            if line.strip == "___COMMITMSG_REMAINDER___:"
+                # puts "hit remainder"
+                append = false
+            else
+                if line =~ /^___COMMITMSG_REMAINDER___:/
+                    # puts "hit remainder w/content"
+                    line = line.sub /^___COMMITMSG_REMAINDER___:/, "    "
+                    msgmode = true
+                end
+            end
+            outlines << line if append
+        end
+        return(outlines.join("\n"))
+    end
 
     def GSBCore.handle_git_push(push)
         if push.has_key? "zen"
@@ -270,8 +305,9 @@ module GSBCore
                     return "git pull says I'm already up to date."
                 end
                 res = run("git checkout master") # just to be safe
-                res = GSBCore.run(%Q(git --no-pager log --pretty=format:"Commit id: %H%nCommit message: %s%n%b%nCommitted by: %cn%nAuthor Name: %an%nCommit date: %ci%nAuthor date: %ai%n" #{commit_before_pull}..HEAD))
+                res = GSBCore.run(%Q(git --no-pager log --pretty=format:"Commit id: %H%n%n___COMMITMSG_FIRSTLINE___:%s%n___COMMITMSG_REMAINDER___:%b%n___END_COMMIT_MSG___%nCommitted by: %cn%nAuthor Name: %an%nCommit date: %ci%nAuthor date: %ai%n" #{commit_before_pull}..HEAD))
                 commits_for_push = res.last.gsub(/\n\nCommitted by:/, "\nCommitted by:")
+                commits_for_push = GSBCore.clean_commit_message(commits_for_push)
                 num_commits = 0
                 commits_for_push.split("\n").find_all {|i| num_commits += 1 if  i =~ /^Commit id: /}
                 pl = num_commits > 1 ? "s" : ""
