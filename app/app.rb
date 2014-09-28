@@ -10,12 +10,20 @@ include GSBCore
 ENV['RUNNING_SINATRA'] = "true" if `hostname` =~ /^ip/
 
 #use Rack::Session::Cookie, secret: 'change_me'
-enable :sessions
+#enable :sessions
+use Rack::Session::Pool
 
 set :default_encoding, "utf-8"
 set :views, File.dirname(__FILE__) + "/views"
 set :session_secret, IO.readlines("data/session_secret.txt").first
 
+configure do
+ #   enable :sessions
+    use Rack::Session::Pool
+    set :default_encoding, "utf-8"
+    set :views, File.dirname(__FILE__) + "/views"
+    set :session_secret, IO.readlines("data/session_secret.txt").first
+end
 
 # FIXME - don't hardcode the release version here but get it from
 # the config file for the BioC site. Otherwise, remember 
