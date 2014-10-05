@@ -300,7 +300,7 @@ module GSBCore
             Dir.chdir(wdir) do
                 res = run("git --no-pager log HEAD")
                 commit_before_pull = res.last.split("\n").first.split(" ").last
-                res = run("git pull")
+                res = run("git pull origin master")
                 if res.last.strip == "Already up-to-date."
                     return "git pull says I'm already up to date."
                 end
