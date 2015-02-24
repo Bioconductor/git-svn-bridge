@@ -327,6 +327,10 @@ EOT
                 # just to be safe, do an svn up.
                 # we should be moderately concerned if this pulls down anything new.
                 res = system2(password, "svn up #{svnflags(owner)}")
+                # FIXME - if res says (on stderr?):
+                # svn: Working copy '.' locked
+                # svn: run 'svn cleanup' to remove locks (type 'svn help cleanup' for details
+                # ... then fix it!                    
                 if res.last.split("\n").length > 1
                     puts2 "svn up (in handle_git_push()) pulled down new content!"
                 end
