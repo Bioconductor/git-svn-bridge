@@ -16,6 +16,7 @@ require 'tmpdir'
 require 'open3'
 require 'sqlite3'
 require 'net/http'
+require 'httparty'
 
 def debug?
     ENV['TESTING_GSB'] == true
@@ -650,9 +651,12 @@ MESSAGE_END
         unless res.code =~ /^2/ # github repo not found
             raise "no_github_repo"
         end
-
-        data = URI.parse("https://api.github.com/repos/#{githubuser}/#{gitprojname}/collaborators").read
-        obj = JSON.parse(data)
+        creds = YAML.load_file("etc/auth.yaml")
+        auth = {:username => creds["username"], :password => creds["password"]}
+        response = HTTParty.get("https://api.github.com/repos/#{githubuser}/#{gitprojname}/collaborators",
+            :basic_auth => auth, :verify => false, headers: {"User-Agent" => "httparty"})
+        #data = URI.parse("https://api.github.com/repos/#{githubuser}/#{gitprojname}/collaborators").read
+        obj = JSON.parse(response.body)
         ok = false
         for item in obj
             if item.has_key? "login" and item["login"] == 'bioc-sync'
