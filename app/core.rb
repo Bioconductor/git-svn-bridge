@@ -306,17 +306,13 @@ module GSBCore
                     return "git pull says I'm already up to date."
                 end
                 res = run("git checkout master") # just to be safe
-                res = GSBCore.run(%Q(git --no-pager log --pretty=format:"Commit id: %H%n%n___COMMITMSG_FIRSTLINE___:%s%n___COMMITMSG_REMAINDER___:%b%n___END_COMMIT_MSG___%nCommitted by: %cn%nAuthor Name: %an%nCommit date: %ci%nAuthor date: %ai%n" #{commit_before_pull}..HEAD))
+                res = GSBCore.run(%Q(git --no-pager log --pretty=format:"Commit id: %H%n%n___COMMITMSG_FIRSTLINE___:%s%n___COMMITMSG_REMAINDER___:%b%n___END_COMMIT_MSG___%n" #{commit_before_pull}..HEAD))
                 commits_for_push = res.last.gsub(/\n\nCommitted by:/, "\nCommitted by:")
                 commits_for_push = GSBCore.clean_commit_message(commits_for_push)
                 num_commits = 0
                 commits_for_push.split("\n").find_all {|i| num_commits += 1 if  i =~ /^Commit id: /}
-                pl = num_commits > 1 ? "s" : ""
                 commit_message =<<"EOT"
 Commit made by the Bioconductor Git-SVN bridge.
-Consists of #{num_commits} commit#{pl}.
-
-Commit information:
 
 #{commits_for_push}
 EOT
