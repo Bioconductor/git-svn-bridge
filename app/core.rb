@@ -301,7 +301,7 @@ module GSBCore
             Dir.chdir(wdir) do
                 res = run("git --no-pager log HEAD")
                 commit_before_pull = res.last.split("\n").first.split(" ").last
-                res = run("git pull origin master")
+                res = run("git pull origin master && git submodule update")
                 if res.last.strip == "Already up-to-date."
                     return "git pull says I'm already up to date."
                 end
@@ -712,7 +712,7 @@ MESSAGE_END
             Dir.chdir "#{ENV['HOME']}/biocsync" do
                 Dir.chdir("git") do
                     raise "git_wc_exists" if File.exists? local_wc # not caught!
-                    res  = run("git clone #{git_ssh_url} #{local_wc}")
+                    res  = run("git clone --recursive #{git_ssh_url} #{local_wc}")
                     unless success(res)
                         raise "git_clone_failed"
                     end
