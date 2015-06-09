@@ -247,12 +247,12 @@ get '/svn-commit-hook' do
     "received!" 
 end
 
-get '/newproject' do
-    protected!
-    usessl!
-    is_testing = request.ip == "127.0.0.1"
-    haml :newproject, :locals => {:is_testing => is_testing}
-end
+# get '/newproject' do
+#     protected!
+#     usessl!
+#     is_testing = request.ip == "127.0.0.1"
+#     haml :newproject, :locals => {:is_testing => is_testing}
+# end
 
 
 
